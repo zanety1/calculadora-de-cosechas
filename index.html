@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Calculadora Cosecha PRO - V28 Final</title>
+    <title>Calculadora Cosecha PRO - V29 Equilibrio Global</title>
     <style>
         :root { --primary: #1a73e8; --secondary: #673ab7; --success: #34a853; --danger: #ea4335; }
         body { font-family: 'Segoe UI', sans-serif; margin: 20px; background: #f0f2f5; color: #333; }
@@ -36,7 +36,7 @@
 
     <div class="config-panel panel">
         <strong>🔑 API KEY:</strong>
-        <input type="password" id="api-key" style="width: 80%;" placeholder="Pega tu clave AIza..." oninput="localStorage.setItem('key_harvest_v28', this.value)">
+        <input type="password" id="api-key" style="width: 80%;" placeholder="Pega tu clave AIza..." oninput="localStorage.setItem('key_harvest_v29', this.value)">
     </div>
 
     <div class="setup-panel panel">
@@ -75,12 +75,12 @@
 
 <script>
     const productosBase = ["Remolacha azucarera", "Café", "Piña", "Trigo", "Arándanos", "Patata", "Champiñones", "Cebada", "Maíz"];
-    let historial = JSON.parse(localStorage.getItem('hist_harvest_v28')) || [];
+    let historial = JSON.parse(localStorage.getItem('hist_harvest_v29')) || [];
 
     window.onload = () => {
-        const k = localStorage.getItem('key_harvest_v28');
+        const k = localStorage.getItem('key_harvest_v29');
         if(k) document.getElementById('api-key').value = k;
-        const d = JSON.parse(localStorage.getItem('data_harvest_v28')) || {};
+        const d = JSON.parse(localStorage.getItem('data_harvest_v29')) || {};
         document.getElementById('n-div').value = d.n || 2;
         actualizarSocios(d.nms || []);
         if(d.ps && d.ps.length > 0) d.ps.forEach(p => nuevaFila(p.n, p.q));
@@ -193,9 +193,9 @@
 
         const objetivo = totalD / n;
 
-        // --- ⚖️ REPARTO 1: EQUITATIVO (Carrusel Perfecto) ---
+        // --- ⚖️ REPARTO 1: EQUITATIVO (Carrusel Global Corregido) ---
         let equi = Array.from({length: n}, () => ({items:[], t:0}));
-        let indexSobrante = 0;
+        let punteroGlobal = 0; 
         prods.forEach(p => {
             let base = Math.floor(p.cant / n);
             let sobrantes = p.cant % n;
@@ -203,32 +203,38 @@
                 if(base > 0) { equi[i].items.push(`${base} ${p.nom}`); equi[i].t += base*3; }
             }
             for(let j=0; j<sobrantes; j++) {
-                let suertudo = (indexSobrante + j) % n;
-                equi[suertudo].items.push(`1 ${p.nom}`);
-                equi[suertudo].t += 3;
+                let socioIdx = (punteroGlobal + j) % n;
+                let existente = equi[socioIdx].items.find(it => it.endsWith(p.nom));
+                if(existente) {
+                    let idx = equi[socioIdx].items.indexOf(existente);
+                    equi[socioIdx].items[idx] = `${parseInt(existente) + 1} ${p.nom}`;
+                } else {
+                    equi[socioIdx].items.push(`1 ${p.nom}`);
+                }
+                equi[socioIdx].t += 3;
             }
-            indexSobrante = (indexSobrante + sobrantes) % n;
+            punteroGlobal = (punteroGlobal + sobrantes) % n;
         });
 
         // --- ⚡ REPARTO 2: RÁPIDO (Corte Mínimo e Igualdad Máxima) ---
         let opti = Array.from({length: n}, () => ({items:[], t:0}));
         let pRes = JSON.parse(JSON.stringify(prods)).sort((a,b) => b.v - a.v);
-
         pRes.forEach(p => {
             while(p.cant > 0) {
                 let s = opti.reduce((min, curr) => curr.t < min.t ? curr : min);
                 let falta = objetivo - s.t;
                 let sacosNecesarios = Math.round(falta / 3);
-
-                if (sacosNecesarios >= p.cant || sacosNecesarios <= 0) {
-                    s.items.push(`${p.cant} ${p.nom}`);
-                    s.t += p.cant * 3;
-                    p.cant = 0;
+                let cantidadDar = (sacosNecesarios >= p.cant || sacosNecesarios <= 0) ? p.cant : sacosNecesarios;
+                
+                let existente = s.items.find(it => it.endsWith(p.nom));
+                if(existente) {
+                    let idx = s.items.indexOf(existente);
+                    s.items[idx] = `${parseInt(existente) + cantidadDar} ${p.nom}`;
                 } else {
-                    s.items.push(`${sacosNecesarios} ${p.nom}`);
-                    s.t += sacosNecesarios * 3;
-                    p.cant -= sacosNecesarios;
+                    s.items.push(`${cantidadDar} ${p.nom}`);
                 }
+                s.t += cantidadDar * 3;
+                p.cant -= cantidadDar;
             }
         });
 
@@ -236,7 +242,7 @@
         renderPanel(opti, 'res-optimizado', '⚡ Opción 2: Reparto Rápido (Sacos optimizados)', 'blue', noms);
         
         const ps = Array.from(document.querySelectorAll('#tabla-cuerpo tr')).map(tr => ({n: tr.querySelector('.in-n').value, q: tr.querySelector('.in-q').value}));
-        localStorage.setItem('data_harvest_v28', JSON.stringify({n, nms: noms, ps}));
+        localStorage.setItem('data_harvest_v29', JSON.stringify({n, nms: noms, ps}));
     }
 
     function renderPanel(data, divId, titulo, clase, noms) {
@@ -266,7 +272,7 @@
         if(total === 0) return;
         historial.unshift({ f: new Date().toLocaleString(), t: total });
         if(historial.length > 10) historial.pop();
-        localStorage.setItem('hist_harvest_v28', JSON.stringify(historial));
+        localStorage.setItem('hist_harvest_v29', JSON.stringify(historial));
         renderHistorial();
         alert("Sesión archivada.");
     }
