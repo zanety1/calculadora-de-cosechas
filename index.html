@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Calculadora Cosecha PRO - V29 Equilibrio Global</title>
+    <title>Calculadora Cosecha PRO - V30 Limpieza Total</title>
     <style>
         :root { --primary: #1a73e8; --secondary: #673ab7; --success: #34a853; --danger: #ea4335; }
         body { font-family: 'Segoe UI', sans-serif; margin: 20px; background: #f0f2f5; color: #333; }
@@ -36,7 +36,7 @@
 
     <div class="config-panel panel">
         <strong>🔑 API KEY:</strong>
-        <input type="password" id="api-key" style="width: 80%;" placeholder="Pega tu clave AIza..." oninput="localStorage.setItem('key_harvest_v29', this.value)">
+        <input type="password" id="api-key" style="width: 80%;" placeholder="Pega tu clave AIza..." oninput="localStorage.setItem('key_harvest_v30', this.value)">
     </div>
 
     <div class="setup-panel panel">
@@ -75,12 +75,12 @@
 
 <script>
     const productosBase = ["Remolacha azucarera", "Café", "Piña", "Trigo", "Arándanos", "Patata", "Champiñones", "Cebada", "Maíz"];
-    let historial = JSON.parse(localStorage.getItem('hist_harvest_v29')) || [];
+    let historial = JSON.parse(localStorage.getItem('hist_harvest_v30')) || [];
 
     window.onload = () => {
-        const k = localStorage.getItem('key_harvest_v29');
+        const k = localStorage.getItem('key_harvest_v30');
         if(k) document.getElementById('api-key').value = k;
-        const d = JSON.parse(localStorage.getItem('data_harvest_v29')) || {};
+        const d = JSON.parse(localStorage.getItem('data_harvest_v30')) || {};
         document.getElementById('n-div').value = d.n || 2;
         actualizarSocios(d.nms || []);
         if(d.ps && d.ps.length > 0) d.ps.forEach(p => nuevaFila(p.n, p.q));
@@ -125,19 +125,18 @@
                 .sort((a,b) => a.includes('pro') ? -1 : 1);
             
             const b64 = (await toBase64(file)).split(',')[1];
-            let exito = false;
 
             for(const m of modelos) {
                 load.innerText = `⌛ Analizando con ${m}...`;
                 try {
                     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${key}`, {
                         method: "POST", headers: {"Content-Type":"application/json"},
-                        body: JSON.stringify({contents:[{parts:[{text:"Detecta PRODUCTO: CANTIDAD. No semillas."}, {inline_data:{mime_type:file.type, data:b64}}]}]})
+                        body: JSON.stringify({contents:[{parts:[{text:"Detecta PRODUCTO: xCANTIDAD. Ignora KG y Semillas. El número tras la x es entero, quita comas."}, {inline_data:{mime_type:file.type, data:b64}}]}]})
                     });
                     const json = await res.json();
                     if(json.candidates && json.candidates[0].content) {
                         procesarLimpiezaSuma(json.candidates[0].content.parts[0].text);
-                        exito = true; break;
+                        break;
                     }
                 } catch(e) { continue; }
             }
@@ -148,10 +147,12 @@
 
     function procesarLimpiezaSuma(texto) {
         texto.split('\n').forEach(linea => {
-            if(!linea.includes(':')) return;
+            if(!linea.includes(':') || linea.toLowerCase().includes('kg')) return;
             const p = linea.split(':');
             const nomIA = p[0].trim().toLowerCase();
-            const num = parseInt(p[1].replace(/^[xXº\s]+/, '').replace(/[,.\s]/g, '')) || 0;
+            // Limpieza estricta: quitar x, quitar comas, quitar puntos y espacios
+            const num = parseInt(p[1].replace(/[xX]/g, '').replace(/[,.\s]/g, '')) || 0;
+            
             if(nomIA.includes("semilla") || num <= 0) return;
 
             let h = false;
@@ -193,7 +194,7 @@
 
         const objetivo = totalD / n;
 
-        // --- ⚖️ REPARTO 1: EQUITATIVO (Carrusel Global Corregido) ---
+        // --- ⚖️ REPARTO 1: EQUITATIVO (Carrusel Global) ---
         let equi = Array.from({length: n}, () => ({items:[], t:0}));
         let punteroGlobal = 0; 
         prods.forEach(p => {
@@ -216,7 +217,7 @@
             punteroGlobal = (punteroGlobal + sobrantes) % n;
         });
 
-        // --- ⚡ REPARTO 2: RÁPIDO (Corte Mínimo e Igualdad Máxima) ---
+        // --- ⚡ REPARTO 2: RÁPIDO (Corte Mínimo) ---
         let opti = Array.from({length: n}, () => ({items:[], t:0}));
         let pRes = JSON.parse(JSON.stringify(prods)).sort((a,b) => b.v - a.v);
         pRes.forEach(p => {
@@ -238,11 +239,11 @@
             }
         });
 
-        renderPanel(equi, 'res-equitativo', '⚖️ Opción 1: Reparto Equitativo', '', noms);
+        renderPanel(equi, 'res-equitativo', '⚖️ Opción 1: Reparto Equitativo (Balanceado)', '', noms);
         renderPanel(opti, 'res-optimizado', '⚡ Opción 2: Reparto Rápido (Sacos optimizados)', 'blue', noms);
         
         const ps = Array.from(document.querySelectorAll('#tabla-cuerpo tr')).map(tr => ({n: tr.querySelector('.in-n').value, q: tr.querySelector('.in-q').value}));
-        localStorage.setItem('data_harvest_v29', JSON.stringify({n, nms: noms, ps}));
+        localStorage.setItem('data_harvest_v30', JSON.stringify({n, nms: noms, ps}));
     }
 
     function renderPanel(data, divId, titulo, clase, noms) {
@@ -272,7 +273,7 @@
         if(total === 0) return;
         historial.unshift({ f: new Date().toLocaleString(), t: total });
         if(historial.length > 10) historial.pop();
-        localStorage.setItem('hist_harvest_v29', JSON.stringify(historial));
+        localStorage.setItem('hist_harvest_v30', JSON.stringify(historial));
         renderHistorial();
         alert("Sesión archivada.");
     }
