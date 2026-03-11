@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Calculadora Cosecha PRO - V30 Limpieza Total</title>
+    <title>Calculadora Cosecha PRO - V32 Inteligente</title>
     <style>
         :root { --primary: #1a73e8; --secondary: #673ab7; --success: #34a853; --danger: #ea4335; }
         body { font-family: 'Segoe UI', sans-serif; margin: 20px; background: #f0f2f5; color: #333; }
@@ -10,33 +10,30 @@
         .panel { padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #ddd; }
         .config-panel { background: #fff3e0; border-color: #ffe0b2; }
         .setup-panel { background: #e8f0fe; border-left: 5px solid var(--primary); }
-        .history-panel { background: #f8f9fa; border: 1px dashed #ccc; max-height: 200px; overflow-y: auto; font-size: 0.85em; }
         .btn { padding: 10px 18px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; display: inline-flex; align-items: center; gap: 8px; color: white; }
         .btn-ia { background: var(--secondary); }
         .btn-add { background: var(--success); }
         .btn-clear { background: var(--danger); }
         .btn-discord { background: #5865F2; }
-        .btn-save { background: #ff9800; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
         th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; }
         input { padding: 8px; border: 1px solid #ddd; border-radius: 6px; }
-        .res-box { background: #1e1e1e; color: #eee; padding: 15px; border-radius: 10px; margin-top: 10px; font-family: 'Consolas', monospace; line-height: 1.5; position: relative; }
+        .res-box { background: #1e1e1e; color: #eee; padding: 15px; border-radius: 10px; margin-top: 10px; font-family: 'Consolas', monospace; position: relative; }
         .res-box b { color: #fbbc05; }
         .res-box.blue { border-left: 5px solid var(--primary); background: #1a1e26; }
         .copy-btn { background: #444; border: none; padding: 5px 8px; border-radius: 4px; color: white; cursor: pointer; float: right; font-size: 10px; }
-        .mode-title { margin-top: 25px; font-size: 0.9em; color: #555; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; border-bottom: 2px solid #ddd; padding-bottom: 5px; }
-        .n-grupo { width: 130px; margin-right: 8px; margin-bottom: 8px; border: 1px solid var(--primary); font-weight: bold; }
-        #loading { display: none; font-weight: bold; color: var(--secondary); margin-left: 10px; background: #eee; padding: 5px 10px; border-radius: 5px; }
+        .mode-title { margin-top: 25px; font-size: 0.9em; color: #555; text-transform: uppercase; font-weight: bold; border-bottom: 2px solid #ddd; }
+        #loading { display: none; font-weight: bold; color: var(--secondary); margin-left: 10px; }
     </style>
 </head>
 <body>
 
 <div class="box">
-    <h2 style="color:var(--primary); margin-top:0;">Calculadora de Cosecha PRO 📦</h2>
+    <h2 style="color:var(--primary); margin-top:0;">Calculadora de Cosecha PRO 📦 V32</h2>
 
     <div class="config-panel panel">
         <strong>🔑 API KEY:</strong>
-        <input type="password" id="api-key" style="width: 80%;" placeholder="Pega tu clave AIza..." oninput="localStorage.setItem('key_harvest_v30', this.value)">
+        <input type="password" id="api-key" style="width: 80%;" oninput="localStorage.setItem('key_harvest_v32', this.value)">
     </div>
 
     <div class="setup-panel panel">
@@ -48,13 +45,11 @@
     <div style="margin: 25px 0; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
         <button class="btn btn-add" onclick="nuevaFila('', 0)">➕ Añadir Fila</button>
         <label class="btn btn-ia" style="cursor:pointer">
-            📷 SUBIR CAPTURA (Suma)
+            📷 SUBIR CAPTURA (Suma Acumulativa)
             <input type="file" id="file-input" accept="image/*" style="display:none">
         </label>
-        <span id="loading">⌛ Iniciando...</span>
-        <div style="flex-grow: 1;"></div>
-        <button class="btn btn-save" onclick="guardarHistorial()">💾 Archivar Sesión</button>
-        <button class="btn btn-clear" onclick="limpiarTabla()">🗑️ Limpiar Datos</button>
+        <span id="loading">⌛ Procesando...</span>
+        <button class="btn btn-clear" style="margin-left:auto" onclick="limpiarTabla()">🗑️ Limpiar Todo</button>
     </div>
 
     <table>
@@ -68,38 +63,29 @@
     <div style="margin-top: 30px; display: flex; justify-content: flex-end;">
         <button class="btn btn-discord" onclick="exportarDiscord()">📊 Copiar para Discord</button>
     </div>
-
-    <h3 style="margin-top:40px; border-top: 2px solid #ddd; padding-top: 20px;">📜 Historial Reciente</h3>
-    <div id="historial-lista" class="history-panel panel"></div>
 </div>
 
 <script>
     const productosBase = ["Remolacha azucarera", "Café", "Piña", "Trigo", "Arándanos", "Patata", "Champiñones", "Cebada", "Maíz"];
-    let historial = JSON.parse(localStorage.getItem('hist_harvest_v30')) || [];
 
     window.onload = () => {
-        const k = localStorage.getItem('key_harvest_v30');
+        const k = localStorage.getItem('key_harvest_v32');
         if(k) document.getElementById('api-key').value = k;
-        const d = JSON.parse(localStorage.getItem('data_harvest_v30')) || {};
-        document.getElementById('n-div').value = d.n || 2;
-        actualizarSocios(d.nms || []);
-        if(d.ps && d.ps.length > 0) d.ps.forEach(p => nuevaFila(p.n, p.q));
-        else resetDefault();
-        renderHistorial();
+        actualizarSocios();
+        resetDefault();
         document.getElementById('file-input').addEventListener('change', function(e) {
             if(this.files[0]) iniciarIA(this.files[0]);
         });
     };
 
-    function actualizarSocios(prev = []) {
+    function actualizarSocios() {
         const n = parseInt(document.getElementById('n-div').value) || 1;
         const area = document.getElementById('area-nombres');
-        const actuales = Array.from(area.querySelectorAll('input')).map(i => i.value);
         area.innerHTML = "";
         for(let i=0; i<n; i++) {
             const input = document.createElement('input');
-            input.className = "n-grupo";
-            input.value = prev[i] || actuales[i] || `Socio ${i+1}`;
+            input.style.width = "120px"; input.style.margin = "5px";
+            input.value = `Socio ${i+1}`;
             input.oninput = repartir;
             area.appendChild(input);
         }
@@ -118,62 +104,78 @@
         load.style.display = "inline";
 
         try {
-            const modResp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
-            const modData = await modResp.json();
-            const modelos = modData.models.map(m => m.name.replace('models/', ''))
-                .filter(n => n.includes('pro') || n.includes('flash'))
-                .sort((a,b) => a.includes('pro') ? -1 : 1);
-            
             const b64 = (await toBase64(file)).split(',')[1];
+            const instruccion = "Analiza la imagen. Busca PRODUCTO y xCANTIDAD (tras la x). Ignora KG. Formato: PRODUCTO:CANTIDAD. Ejemplo: Trigo:2924. Sin notas.";
 
-            for(const m of modelos) {
-                load.innerText = `⌛ Analizando con ${m}...`;
-                try {
-                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${key}`, {
-                        method: "POST", headers: {"Content-Type":"application/json"},
-                        body: JSON.stringify({contents:[{parts:[{text:"Detecta PRODUCTO: xCANTIDAD. Ignora KG y Semillas. El número tras la x es entero, quita comas."}, {inline_data:{mime_type:file.type, data:b64}}]}]})
-                    });
-                    const json = await res.json();
-                    if(json.candidates && json.candidates[0].content) {
-                        procesarLimpiezaSuma(json.candidates[0].content.parts[0].text);
-                        break;
-                    }
-                } catch(e) { continue; }
-            }
-        } catch(e) { alert("Error de conexión API."); }
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+                method: "POST", headers: {"Content-Type":"application/json"},
+                body: JSON.stringify({contents:[{parts:[{text: instruccion}, {inline_data:{mime_type:file.type, data:b64}}]}]})
+            });
+            const json = await res.json();
+            if(json.candidates) procesarLimpiezaSuma(json.candidates[0].content.parts[0].text);
+        } catch(e) { alert("Error en el reconocimiento."); }
+        
         load.style.display = "none";
         document.getElementById('file-input').value = "";
     }
 
     function procesarLimpiezaSuma(texto) {
         texto.split('\n').forEach(linea => {
-            if(!linea.includes(':') || linea.toLowerCase().includes('kg')) return;
-            const p = linea.split(':');
-            const nomIA = p[0].trim().toLowerCase();
-            // Limpieza estricta: quitar x, quitar comas, quitar puntos y espacios
-            const num = parseInt(p[1].replace(/[xX]/g, '').replace(/[,.\s]/g, '')) || 0;
-            
-            if(nomIA.includes("semilla") || num <= 0) return;
+            if(!linea.includes(':')) return;
+            let [nomIA, cantIA] = linea.split(':');
+            const num = parseInt(cantIA.replace(/\D/g, '')) || 0;
+            if(num <= 0 || linea.toLowerCase().includes('kg')) return;
 
-            let h = false;
+            let mejorCoincidencia = null;
+            let similitudMaxima = 0;
+
             document.querySelectorAll('#tabla-cuerpo tr').forEach(tr => {
-                const inN = tr.querySelector('.in-n'), inQ = tr.querySelector('.in-q');
-                if(inN.value.toLowerCase().includes(nomIA) || nomIA.includes(inN.value.toLowerCase())) {
-                    inQ.value = (parseInt(inQ.value)||0) + num; h = true;
-                }
+                const nombreExistente = tr.querySelector('.in-n').value;
+                const score = calcularSimilitud(nomIA.toLowerCase(), nombreExistente.toLowerCase());
+                if (score > similitudMaxima) { similitudMaxima = score; mejorCoincidencia = tr; }
             });
-            if(!h) nuevaFila(p[0].trim(), num);
+
+            if (mejorCoincidencia && similitudMaxima > 0.7) {
+                const inQ = mejorCoincidencia.querySelector('.in-q');
+                inQ.value = (parseInt(inQ.value) || 0) + num; // SUMA ACUMULATIVA
+            } else {
+                nuevaFila(nomIA.trim(), num);
+            }
         });
         repartir();
+    }
+
+    function calcularSimilitud(s1, s2) {
+        let longer = s1.length < s2.length ? s2 : s1;
+        let shorter = s1.length < s2.length ? s1 : s2;
+        if (longer.length === 0) return 1.0;
+        return (longer.length - editDistance(longer, shorter)) / parseFloat(longer.length);
+    }
+
+    function editDistance(s1, s2) {
+        let costs = [];
+        for (let i = 0; i <= s1.length; i++) {
+            let lastValue = i;
+            for (let j = 0; j <= s2.length; j++) {
+                if (i == 0) costs[j] = j;
+                else if (j > 0) {
+                    let newValue = costs[j - 1];
+                    if (s1.charAt(i - 1) != s2.charAt(j - 1)) newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+                    costs[j - 1] = lastValue; lastValue = newValue;
+                }
+            }
+            if (i > 0) costs[s2.length] = lastValue;
+        }
+        return costs[s2.length];
     }
 
     function nuevaFila(n="", q=0) {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td><input type="text" class="in-n" value="${n}" oninput="repartir()" style="width:220px;"></td>
-            <td><input type="number" class="in-q" value="${q}" oninput="repartir()" style="width:80px;"></td>
+            <td><input type="text" class="in-n" value="${n}" oninput="repartir()"></td>
+            <td><input type="number" class="in-q" value="${q}" oninput="repartir()"></td>
             <td class="vd" style="font-weight:bold; color:var(--primary)">${q*3}$</td>
-            <td><button style="color:red; background:none; border:none; cursor:pointer" onclick="this.parentElement.parentElement.remove(); repartir();">✕</button></td>
+            <td><button onclick="this.parentElement.parentElement.remove(); repartir();">✕</button></td>
         `;
         document.getElementById('tabla-cuerpo').appendChild(tr);
         repartir();
@@ -181,112 +183,45 @@
 
     function repartir() {
         const n = parseInt(document.getElementById('n-div').value) || 1;
-        const noms = Array.from(document.querySelectorAll('#area-nombres input')).map(i => i.value || "Socio");
-        let prods = [];
-        let totalD = 0;
+        const noms = Array.from(document.querySelectorAll('#area-nombres input')).map(i => i.value);
+        let prods = [], totalD = 0;
 
         document.querySelectorAll('#tabla-cuerpo tr').forEach(tr => {
             const nom = tr.querySelector('.in-n').value;
             const cant = parseInt(tr.querySelector('.in-q').value) || 0;
             tr.querySelector('.vd').innerText = (cant * 3) + "$";
-            if(cant > 0) { prods.push({nom, cant, v: cant*3}); totalD += cant*3; }
+            if(cant > 0) { prods.push({nom, cant}); totalD += cant*3; }
         });
 
-        const objetivo = totalD / n;
-
-        // --- ⚖️ REPARTO 1: EQUITATIVO (Carrusel Global) ---
+        // REPARTO EQUITATIVO (CARRUSEL)
         let equi = Array.from({length: n}, () => ({items:[], t:0}));
-        let punteroGlobal = 0; 
+        let pGlobal = 0;
         prods.forEach(p => {
-            let base = Math.floor(p.cant / n);
-            let sobrantes = p.cant % n;
-            for(let i=0; i<n; i++) {
-                if(base > 0) { equi[i].items.push(`${base} ${p.nom}`); equi[i].t += base*3; }
+            let base = Math.floor(p.cant / n), sobras = p.cant % n;
+            for(let i=0; i<n; i++) if(base > 0) { equi[i].items.push(`${base} ${p.nom}`); equi[i].t += base*3; }
+            for(let j=0; j<sobras; j++) {
+                let sIdx = (pGlobal + j) % n;
+                equi[sIdx].items.push(`1 ${p.nom}`); equi[sIdx].t += 3;
             }
-            for(let j=0; j<sobrantes; j++) {
-                let socioIdx = (punteroGlobal + j) % n;
-                let existente = equi[socioIdx].items.find(it => it.endsWith(p.nom));
-                if(existente) {
-                    let idx = equi[socioIdx].items.indexOf(existente);
-                    equi[socioIdx].items[idx] = `${parseInt(existente) + 1} ${p.nom}`;
-                } else {
-                    equi[socioIdx].items.push(`1 ${p.nom}`);
-                }
-                equi[socioIdx].t += 3;
-            }
-            punteroGlobal = (punteroGlobal + sobrantes) % n;
+            pGlobal = (pGlobal + sobras) % n;
         });
 
-        // --- ⚡ REPARTO 2: RÁPIDO (Corte Mínimo) ---
-        let opti = Array.from({length: n}, () => ({items:[], t:0}));
-        let pRes = JSON.parse(JSON.stringify(prods)).sort((a,b) => b.v - a.v);
-        pRes.forEach(p => {
-            while(p.cant > 0) {
-                let s = opti.reduce((min, curr) => curr.t < min.t ? curr : min);
-                let falta = objetivo - s.t;
-                let sacosNecesarios = Math.round(falta / 3);
-                let cantidadDar = (sacosNecesarios >= p.cant || sacosNecesarios <= 0) ? p.cant : sacosNecesarios;
-                
-                let existente = s.items.find(it => it.endsWith(p.nom));
-                if(existente) {
-                    let idx = s.items.indexOf(existente);
-                    s.items[idx] = `${parseInt(existente) + cantidadDar} ${p.nom}`;
-                } else {
-                    s.items.push(`${cantidadDar} ${p.nom}`);
-                }
-                s.t += cantidadDar * 3;
-                p.cant -= cantidadDar;
-            }
-        });
-
-        renderPanel(equi, 'res-equitativo', '⚖️ Opción 1: Reparto Equitativo (Balanceado)', '', noms);
-        renderPanel(opti, 'res-optimizado', '⚡ Opción 2: Reparto Rápido (Sacos optimizados)', 'blue', noms);
-        
-        const ps = Array.from(document.querySelectorAll('#tabla-cuerpo tr')).map(tr => ({n: tr.querySelector('.in-n').value, q: tr.querySelector('.in-q').value}));
-        localStorage.setItem('data_harvest_v30', JSON.stringify({n, nms: noms, ps}));
+        renderPanel(equi, 'res-equitativo', '⚖️ Opción 1: Reparto Equitativo', noms);
     }
 
-    function renderPanel(data, divId, titulo, clase, noms) {
+    function renderPanel(data, divId, titulo, noms) {
         let h = `<div class="mode-title">${titulo}</div>`;
         data.forEach((g, i) => {
-            const txt = `${g.t}$ - Compra ${g.items.join(' + ') || 'Nada'}`;
-            h += `<div style="margin-top:10px; font-weight:bold; font-size:0.8em;">${noms[i].toUpperCase()}:</div>
-            <div class="res-box ${clase}"><button class="copy-btn" onclick="copyToClipboard('${txt}')">Copiar</button>
-            <b>${g.t}$</b> - Compra ${g.items.join(' + ') || 'Nada'}</div>`;
+            const txt = `${g.t}$ - Compra ${g.items.join(' + ')}`;
+            h += `<div style="margin-top:10px; font-weight:bold;">${noms[i]}:</div>
+            <div class="res-box"><button class="copy-btn" onclick="navigator.clipboard.writeText('${txt}')">Copiar</button>
+            <b>${g.t}$</b> - Compra ${g.items.join(' + ')}</div>`;
         });
         document.getElementById(divId).innerHTML = h;
     }
 
-    function exportarDiscord() {
-        const total = Array.from(document.querySelectorAll('.vd')).reduce((a, b) => a + parseInt(b.innerText), 0);
-        let msg = `📦 **REPORTE DE COSECHA**\n💰 **Total:** \`${total}$\`\n\n`;
-        document.querySelectorAll('#res-optimizado .res-box').forEach((box) => {
-            const socio = box.previousElementSibling.innerText;
-            msg += `👤 **${socio}**\n└ ${box.innerText.replace('Copiar', '').trim()}\n`;
-        });
-        copyToClipboard(msg);
-        alert("¡Copiado para Discord!");
-    }
-
-    function guardarHistorial() {
-        const total = Array.from(document.querySelectorAll('.vd')).reduce((a, b) => a + parseInt(b.innerText), 0);
-        if(total === 0) return;
-        historial.unshift({ f: new Date().toLocaleString(), t: total });
-        if(historial.length > 10) historial.pop();
-        localStorage.setItem('hist_harvest_v30', JSON.stringify(historial));
-        renderHistorial();
-        alert("Sesión archivada.");
-    }
-
-    function renderHistorial() {
-        const hList = document.getElementById('historial-lista');
-        if(historial.length === 0) { hList.innerHTML = "<p style='padding:10px; color:#999;'>Sin historial.</p>"; return; }
-        hList.innerHTML = historial.map(i => `<div style="padding:8px; border-bottom:1px solid #eee; display:flex; justify-content:space-between;"><span>📅 ${i.f}</span><b>${i.t}$</b></div>`).join('');
-    }
-
-    function copyToClipboard(t) { navigator.clipboard.writeText(t); }
-    function limpiarTabla() { if(confirm("¿Limpiar todo?")) { resetDefault(); repartir(); } }
-    function toBase64(f) { return new Promise((res, rej) => { const r = new FileReader(); r.readAsDataURL(f); r.onload = () => res(r.result); r.onerror = e => rej(e); }); }
+    function limpiarTabla() { if(confirm("¿Borrar todo?")) { resetDefault(); repartir(); } }
+    function toBase64(f) { return new Promise((res) => { const r = new FileReader(); r.readAsDataURL(f); r.onload = () => res(r.result); }); }
 </script>
 </body>
 </html>
