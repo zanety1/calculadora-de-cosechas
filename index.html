@@ -2,114 +2,90 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Calculadora Cosecha PRO - V40 Reparto Optimizado</title>
+    <title>Cosecha PRO V42 - FIX TOTAL</title>
     <style>
         :root { --primary: #1a73e8; --secondary: #673ab7; --success: #34a853; --danger: #ea4335; --dark: #202124; }
         body { font-family: 'Segoe UI', sans-serif; margin: 20px; background: #f8f9fa; display: flex; justify-content: center; }
         .box { width: 100%; max-width: 950px; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); }
-        
         .panel { padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #e0e0e0; }
         .config-panel { background: #fffdf0; border-left: 5px solid #fbc02d; }
         .setup-panel { background: #f0f7ff; border-left: 5px solid var(--primary); }
-        
         .btn { padding: 10px 16px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; color: white; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s; }
         .btn-ia { background: var(--secondary); }
         .btn-add { background: var(--success); }
         .btn-clear { background: var(--danger); }
-        .btn-key { background: #5f6368; font-size: 11px; padding: 5px 10px; }
-
         #main-container { display: flex; gap: 25px; width: 100%; max-width: 1300px; }
-        #gallery { display: flex; gap: 10px; flex-wrap: wrap; margin: 15px 0; padding: 10px; background: #ffffff; border-radius: 10px; border: 2px dashed #d1d1d1; min-height: 70px; }
-        .thumb-item { position: relative; width: 70px; height: 70px; border: 2px solid #fff; box-shadow: 0 4px 8px rgba(0,0,0,0.1); cursor: pointer; transition: 0.2s; }
-        .thumb-item:hover { transform: translateY(-3px); }
+        #gallery { display: flex; gap: 10px; flex-wrap: wrap; margin: 15px 0; padding: 10px; background: #fff; border-radius: 10px; border: 2px dashed #d1d1d1; min-height: 70px; }
+        .thumb-item { position: relative; width: 70px; height: 70px; border: 2px solid #fff; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
         .thumb-item img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; }
-        .btn-del-img { position: absolute; top: -10px; right: -10px; background: var(--danger); color: white; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-size: 12px; border: 2px solid white; }
-
-        #preview-aside { width: 350px; position: sticky; top: 20px; height: fit-content; background: #000; border-radius: 15px; overflow: hidden; border: 5px solid var(--primary); display: none; box-shadow: 0 20px 50px rgba(0,0,0,0.4); }
+        #preview-aside { width: 350px; position: sticky; top: 20px; height: fit-content; background: #000; border-radius: 15px; overflow: hidden; border: 5px solid var(--primary); display: none; }
         #preview-aside img { width: 100%; display: block; }
-
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th { background: #f1f3f4; color: #5f6368; text-transform: uppercase; font-size: 12px; letter-spacing: 1px; }
         th, td { text-align: left; padding: 12px; border-bottom: 1px solid #f1f1f1; }
-        input { padding: 8px; border: 1px solid #ced4da; border-radius: 8px; width: 90%; transition: 0.2s; }
-        input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(26,115,232,0.1); }
-        
-        .res-box { background: var(--dark); color: #e8eaed; padding: 18px; border-radius: 12px; margin-top: 10px; font-family: 'Consolas', monospace; position: relative; line-height: 1.5; }
-        .mode-header { font-weight: 800; margin-top: 30px; padding: 12px; background: #fff; border-radius: 10px; display: flex; align-items: center; gap: 12px; border: 1px solid #eee; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
-        #loading { display: none; color: var(--secondary); font-weight: bold; margin-left: 15px; }
+        input { padding: 8px; border: 1px solid #ced4da; border-radius: 8px; width: 90%; }
+        .res-box { background: var(--dark); color: #e8eaed; padding: 18px; border-radius: 12px; margin-top: 10px; font-family: 'Consolas', monospace; position: relative; }
         .copy-btn { position: absolute; top: 12px; right: 12px; background: #3c4043; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 11px; }
-        .copy-btn:hover { background: #5f6368; }
+        #loading { display: none; color: var(--secondary); font-weight: bold; margin-left: 15px; }
     </style>
 </head>
 <body>
 
 <div id="main-container">
     <div class="box">
-        <h2 style="color:var(--dark); margin:0 0 20px 0; display:flex; align-items:center; gap:10px;">
-            <span style="font-size:30px;">📦</span> Calculadora Cosecha PRO V40
-        </h2>
+        <h2 style="color:var(--dark); margin:0 0 20px 0;">📦 Calculadora Cosecha PRO V42</h2>
 
         <div class="config-panel panel">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <strong>🔑 CONFIGURACIÓN API</strong>
-                <button class="btn btn-key" onclick="borrarKey()">BORRAR CLAVE GUARDADA</button>
-            </div>
-            <input type="password" id="api-key" style="margin-top:10px; width:95%;" placeholder="Pega aquí tu Gemini API Key..." oninput="localStorage.setItem('h_key_v40', this.value)">
+            <strong>🔑 API KEY GEMINI:</strong>
+            <input type="password" id="api-key" style="width:70%; margin:0 10px;" oninput="localStorage.setItem('h_key_v42', this.value)">
+            <button class="btn btn-clear" style="padding:5px 10px; font-size:10px;" onclick="localStorage.removeItem('h_key_v42'); location.reload();">BORRAR KEY</button>
         </div>
 
         <div class="setup-panel panel">
-            <strong>👥 EQUIPO:</strong> Nº de Personas 
+            <strong>👥 EQUIPO:</strong> 
             <input type="number" id="n-soc" value="3" min="1" style="width:60px;" oninput="crearSocios()">
             <div id="nombres-area" style="display:flex; flex-wrap:wrap; margin-top:12px;"></div>
         </div>
 
-        <div style="display:flex; gap:12px; align-items:center; margin-bottom:15px;">
-            <button class="btn btn-add" onclick="nuevaFila('', 0)">➕ AÑADIR FILA</button>
+        <div style="display:flex; gap:12px; align-items:center;">
+            <button class="btn btn-add" onclick="nuevaFila('', 0)">➕ FILA</button>
             <label class="btn btn-ia">
-                📷 ANALIZAR CAPTURA
+                📷 ANALIZAR IMAGEN
                 <input type="file" id="file-input" accept="image/*" style="display:none" onchange="subirFoto(this)">
             </label>
-            <span id="loading">⌛ PROCESANDO...</span>
+            <span id="loading">⌛ ANALIZANDO...</span>
             <button class="btn btn-clear" style="margin-left:auto" onclick="limpiar()">🗑️ RESET</button>
         </div>
 
         <div id="gallery"></div>
 
         <table>
-            <thead><tr><th>Producto</th><th>Cantidad (x)</th><th>Valor ($)</th><th></th></tr></thead>
+            <thead><tr><th>Producto</th><th>Cantidad</th><th>Valor ($)</th><th></th></tr></thead>
             <tbody id="cuerpo"></tbody>
         </table>
 
         <div id="resultados"></div>
     </div>
 
-    <aside id="preview-aside">
-        <div style="color:white; padding:10px; font-size:12px; text-align:center; background:var(--primary); font-weight:bold;">🔍 ZOOM DE IMAGEN</div>
-        <img id="preview-img" src="">
-    </aside>
+    <aside id="preview-aside"><img id="preview-img" src=""></aside>
 </div>
 
 <script>
     let fotos = [];
-    const PRODUCTOS_PREDEF = ["Remolacha azucarera", "Café", "Piña", "Trigo", "Arándanos", "Patata", "Champiñones", "Cebada", "Maíz"];
+    const BASE = ["Remolacha azucarera", "Café", "Piña", "Trigo", "Arándanos", "Patata", "Champiñones", "Cebada", "Maíz"];
 
     window.onload = () => {
-        const k = localStorage.getItem('h_key_v40');
+        const k = localStorage.getItem('h_key_v42');
         if(k) document.getElementById('api-key').value = k;
         crearSocios();
-        PRODUCTOS_PREDEF.forEach(p => nuevaFila(p, 0));
+        BASE.forEach(p => nuevaFila(p, 0));
     };
-
-    function borrarKey() { if(confirm("¿Eliminar la API Key del navegador?")) { localStorage.removeItem('h_key_v40'); document.getElementById('api-key').value = ""; } }
 
     function nuevaFila(n, q) {
         const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td><input type="text" class="in-n" value="${n}" oninput="repartir()"></td>
+        tr.innerHTML = `<td><input type="text" class="in-n" value="${n}" oninput="repartir()"></td>
             <td><input type="number" class="in-q" value="${q}" oninput="repartir()"></td>
             <td class="vd" style="font-weight:bold; color:var(--primary)">${q*3}$</td>
-            <td><button style="background:none; border:none; cursor:pointer;" onclick="this.parentElement.parentElement.remove(); repartir();">❌</button></td>
-        `;
+            <td><button onclick="this.parentElement.parentElement.remove(); repartir();">✕</button></td>`;
         document.getElementById('cuerpo').appendChild(tr);
         repartir();
     }
@@ -117,12 +93,12 @@
     function crearSocios() {
         const n = document.getElementById('n-soc').value;
         const area = document.getElementById('nombres-area');
-        const prevNoms = Array.from(area.querySelectorAll('input')).map(i => i.value);
+        const prev = Array.from(area.querySelectorAll('input')).map(i => i.value);
         area.innerHTML = "";
         for(let i=0; i<n; i++) {
             const inp = document.createElement('input');
             inp.style.width = "120px"; inp.style.margin = "4px";
-            inp.value = prevNoms[i] || `Socio ${i+1}`;
+            inp.value = prev[i] || `Socio ${i+1}`;
             inp.className = "soc-nom";
             inp.oninput = repartir;
             area.appendChild(inp);
@@ -134,9 +110,10 @@
         if(!input.files[0]) return;
         const reader = new FileReader();
         reader.onload = async (e) => {
-            fotos.push(e.target.result);
+            const b64Full = e.target.result;
+            fotos.push(b64Full);
             renderGaleria();
-            await llamarIA(e.target.result.split(',')[1]);
+            await llamarIA(b64Full.split(',')[1]);
         };
         reader.readAsDataURL(input.files[0]);
         input.value = "";
@@ -148,31 +125,30 @@
         fotos.forEach((src, i) => {
             const d = document.createElement('div');
             d.className = "thumb-item";
-            d.innerHTML = `<img src="${src}" onmouseover="showPrev('${src}')" onmouseout="hidePrev()"><button class="btn-del-img" onclick="borrarFoto(${i})">×</button>`;
+            d.innerHTML = `<img src="${src}" onmouseover="showP('${src}')" onmouseout="hideP()"><button onclick="fotos.splice(${i},1);renderGaleria()" style="position:absolute;top:-5px;right:-5px;background:red;color:white;border-radius:50%;border:none;cursor:pointer">×</button>`;
             gal.appendChild(d);
         });
     }
 
-    function showPrev(src) { document.getElementById('preview-img').src = src; document.getElementById('preview-aside').style.display = "block"; }
-    function hidePrev() { document.getElementById('preview-aside').style.display = "none"; }
-    function borrarFoto(i) { fotos.splice(i,1); renderGaleria(); }
+    function showP(s) { document.getElementById('preview-img').src=s; document.getElementById('preview-aside').style.display='block'; }
+    function hideP() { document.getElementById('preview-aside').style.display='none'; }
 
-    async function llamarIA(data) {
+    async function llamarIA(b64) {
         const key = document.getElementById('api-key').value;
         if(!key) return alert("Falta API Key");
         document.getElementById('loading').style.display = "inline";
         try {
-            const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ contents: [{ parts: [
-                    { text: "Extrae PRODUCTO:CANTIDAD tras la 'x'. Ignora semillas/KG. Nombres: Café, Piña, Trigo, Remolacha azucarera, Arándanos, Patata, Champiñones, Cebada, Maíz." },
-                    { inline_data: { mime_type: "image/png", data: data } }
+                    { text: "Analiza la imagen. Busca PRODUCTO:CANTIDAD (tras la x). Nombres: Café, Piña, Trigo, Remolacha azucarera, Arándanos, Patata, Champiñones, Cebada, Maíz." },
+                    { inline_data: { mime_type: "image/png", data: b64 } }
                 ] }] })
             });
-            const j = await r.json();
+            const j = await res.json();
             if(j.candidates) procesarIA(j.candidates[0].content.parts[0].text);
-        } catch(e) { alert("Error API"); }
+        } catch(e) { alert("Error en API"); }
         document.getElementById('loading').style.display = "none";
     }
 
@@ -181,7 +157,6 @@
             if(!l.includes(':')) return;
             const [nIA, qRaw] = l.split(':');
             const qIA = parseInt(qRaw.replace(/\D/g, '')) || 0;
-            if(qIA <= 0) return;
             let h = false;
             document.querySelectorAll('#cuerpo tr').forEach(tr => {
                 const nF = tr.querySelector('.in-n').value.toLowerCase();
@@ -190,7 +165,7 @@
                     h = true;
                 }
             });
-            if(!h) nuevaFila(nIA.trim(), qIA);
+            if(!h && qIA > 0) nuevaFila(nIA.trim(), qIA);
         });
         repartir();
     }
@@ -198,18 +173,17 @@
     function repartir() {
         const n = parseInt(document.getElementById('n-soc').value) || 1;
         const noms = Array.from(document.querySelectorAll('.soc-nom')).map(i => i.value);
-        let items = [];
-        let totalDinero = 0;
+        let items = [], total = 0;
         document.querySelectorAll('#cuerpo tr').forEach(tr => {
             const q = parseInt(tr.querySelector('.in-q').value) || 0;
             const nom = tr.querySelector('.in-n').value;
             tr.querySelector('.vd').innerText = (q*3) + "$";
-            if(q > 0) { items.push({nom, q, rem: q}); totalDinero += q * 3; }
+            if(q > 0) { items.push({nom, q}); total += q*3; }
         });
 
-        const objetivoSocio = totalDinero / n;
+        const obj = total / n;
 
-        // --- REPARTO 1: EQUITATIVO (Matemático) ---
+        // Reparto 1: Equitativo
         let eq = Array.from({length: n}, () => ({l:[], t:0}));
         let pE = 0;
         items.forEach(it => {
@@ -219,33 +193,16 @@
             pE = (pE + sob) % n;
         });
 
-        // --- REPARTO 2: RÁPIDO (Híbrido por valor) ---
+        // Reparto 2: Rápido (Consolidado)
         let ra = Array.from({length: n}, () => ({l:[], t:0}));
-        let idxSocio = 0;
+        let sIdx = 0;
         items.forEach(it => {
-            let cantidadRestanteItem = it.q;
-            while(cantidadRestanteItem > 0 && idxSocio < n) {
-                let faltaSocio = objetivoSocio - ra[idxSocio].t;
-                let unidadesNecesarias = Math.max(0, Math.floor(faltaSocio / 3));
-                
-                if(unidadesNecesarias <= 0 && idxSocio < n-1) { 
-                    idxSocio++; 
-                    continue; 
-                }
-
-                let aDar = Math.min(cantidadRestanteItem, unidadesNecesarias);
-                // Si es el último socio, se queda todo el resto para cuadrar
-                if(idxSocio === n - 1) aDar = cantidadRestanteItem;
-
-                if(aDar > 0) {
-                    ra[idxSocio].l.push(`${aDar} ${it.nom}`);
-                    ra[idxSocio].t += aDar * 3;
-                    cantidadRestanteItem -= aDar;
-                } else if (idxSocio < n - 1) {
-                    idxSocio++;
-                } else {
-                    break;
-                }
+            let rem = it.q;
+            while(rem > 0 && sIdx < n) {
+                let falta = (obj - ra[sIdx].t) / 3;
+                let dar = (sIdx === n-1) ? rem : Math.min(rem, Math.floor(falta));
+                if(dar > 0) { ra[sIdx].l.push(`${dar} ${it.nom}`); ra[sIdx].t += dar*3; rem -= dar; }
+                if(rem > 0 && sIdx < n-1) sIdx++; else break;
             }
         });
 
@@ -253,21 +210,24 @@
     }
 
     function dibujar(eq, ra, noms) {
-        let h = `<div class="mode-header">⚖️ OPCIÓN 1: REPARTO EQUITATIVO (MÁXIMA IGUALDAD)</div>`;
+        let h = `<h3 style="background:#eee;padding:10px;border-radius:8px;">⚖️ OPCIÓN 1: REPARTO EQUITATIVO</h3>`;
         eq.forEach((s, i) => h += fmt(noms[i], s));
-        h += `<div class="mode-header">⚡ OPCIÓN 2: REPARTO RÁPIDO (MINIMIZAR MEZCLAS)</div>`;
+        h += `<h3 style="background:#eee;padding:10px;border-radius:8px;margin-top:20px;">⚡ OPCIÓN 2: REPARTO RÁPIDO</h3>`;
         ra.forEach((s, i) => h += fmt(noms[i], s));
         document.getElementById('resultados').innerHTML = h;
     }
 
     function fmt(nom, s) {
-        const t = `${s.t}$ - Compra ${s.l.join(' + ')}`;
-        return `<div style="margin-top:12px;"><strong>${nom.toUpperCase()}</strong>
-                <div class="res-box"><button class="copy-btn" onclick="navigator.clipboard.writeText('${t}')">COPIAR</button>
-                <span style="color:#fbc02d; font-weight:bold;">${s.t}$</span> - Compra ${s.l.join(' + ') || 'Nada'}</div></div>`;
+        let ag = {};
+        s.l.forEach(i => { let [c, ...n] = i.split(' '); let nm = n.join(' '); ag[nm] = (ag[nm] || 0) + parseInt(c); });
+        let res = []; for(let p in ag) res.push(`${ag[p]} ${p}`);
+        const txt = `${s.t}$ - Compra ${res.join(' + ')}`;
+        return `<div style="margin-top:10px;"><strong>${nom.toUpperCase()}</strong>
+                <div class="res-box"><button class="copy-btn" onclick="navigator.clipboard.writeText('${txt}')">COPIAR</button>
+                <b style="color:#fbc02d">${s.t}$</b> - Compra ${res.join(' + ') || 'Nada'}</div></div>`;
     }
 
-    function limpiar() { if(confirm("¿Resetear tabla?")) { document.getElementById('cuerpo').innerHTML=""; PRODUCTOS_PREDEF.forEach(p=>nuevaFila(p,0)); } }
+    function limpiar() { if(confirm("¿Reset?")) { document.getElementById('cuerpo').innerHTML=""; BASE.forEach(p=>nuevaFila(p,0)); } }
 </script>
 </body>
 </html>
