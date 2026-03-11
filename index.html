@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Cosecha PRO - Versión 1 (Motor Adaptativo)</title>
+    <title>Cosecha PRO - Versión 1 (Motor Cascada)</title>
     <style>
         :root { --primary: #1a73e8; --secondary: #673ab7; --success: #34a853; --danger: #ea4335; --dark: #202124; }
         body { font-family: 'Segoe UI', sans-serif; margin: 20px; background: #f8f9fa; display: flex; justify-content: center; }
@@ -10,20 +10,26 @@
         .panel { padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #e0e0e0; }
         .config-panel { background: #fffdf0; border-left: 5px solid #fbc02d; }
         .setup-panel { background: #f0f7ff; border-left: 5px solid var(--primary); }
+        
         .btn { padding: 10px 16px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; color: white; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s; }
         .btn-ia { background: var(--secondary); }
         .btn-add { background: var(--success); }
         .btn-clear { background: var(--danger); }
+
         #main-container { display: flex; gap: 20px; width: 100%; max-width: 1300px; }
+        
         #gallery { display: flex; gap: 10px; flex-wrap: wrap; margin: 15px 0; padding: 10px; background: #fafafa; border-radius: 10px; border: 2px dashed #ccc; min-height: 70px; }
         .thumb-item { position: relative; width: 70px; height: 70px; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.2); cursor: pointer; }
         .thumb-item img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; }
         .btn-del-img { position: absolute; top: -8px; right: -8px; background: var(--danger); color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; cursor: pointer; border: 1px solid white; }
+
         #preview-aside { width: 320px; position: sticky; top: 20px; height: fit-content; background: #000; border-radius: 15px; overflow: hidden; border: 4px solid var(--primary); display: none; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         #preview-aside img { width: 100%; display: block; }
+
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { text-align: left; padding: 10px; border-bottom: 1px solid #eee; }
         input { padding: 8px; border: 1px solid #ddd; border-radius: 6px; width: 90%; }
+        
         .res-box { background: var(--dark); color: #eee; padding: 15px; border-radius: 10px; margin-top: 10px; font-family: 'Consolas', monospace; position: relative; }
         .copy-btn { position: absolute; top: 10px; right: 10px; background: #444; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 10px; }
         #loading { display: none; color: var(--secondary); font-weight: bold; margin-left: 10px; }
@@ -33,7 +39,7 @@
 
 <div id="main-container">
     <div class="box">
-        <h2 style="margin:0 0 15px 0;">📦 Cosecha PRO - Versión 1 (Full Motor)</h2>
+        <h2 style="margin:0 0 15px 0;">📦 Cosecha PRO - Versión 1</h2>
 
         <div class="config-panel panel">
             <strong>🔑 API KEY:</strong>
@@ -50,7 +56,8 @@
         <div style="display:flex; gap:10px; align-items:center;">
             <button class="btn btn-add" onclick="nuevaFila('', 0)">➕ FILA</button>
             <label class="btn btn-ia">📷 ANALIZAR IMAGEN<input type="file" id="file-input" accept="image/*" style="display:none" onchange="subirFoto(this)"></label>
-            <span id="loading">⌛ BUSCANDO MODELO...</span>
+            <span id="loading">⌛ ANALIZANDO...</span>
+            <button class="btn btn-clear" style="margin-left:auto" onclick="limpiar()">🗑️ RESET</button>
         </div>
 
         <div id="gallery"></div>
@@ -66,7 +73,7 @@
 <script>
     let fotos = [];
     const BASE = ["Remolacha azucarera", "Café", "Piña", "Trigo", "Patata", "Maíz"];
-    const PRIORIDAD_MODELOS = ["gemini-1.5-pro", "gemini-1.5-flash", "gemini-pro-vision"];
+    const MODELOS = ["gemini-1.5-pro", "gemini-1.5-flash", "gemini-pro-vision"];
 
     window.onload = () => {
         const k = localStorage.getItem('v1_key');
@@ -107,9 +114,10 @@
         reader.onload = async (e) => {
             fotos.push(e.target.result);
             renderGaleria();
-            await motorInteligente(e.target.result.split(',')[1]);
+            await motorCascada(e.target.result.split(',')[1]);
         };
         reader.readAsDataURL(input.files[0]);
+        input.value = "";
     }
 
     function renderGaleria() {
@@ -125,38 +133,38 @@
     function showPrev(src) { document.getElementById('preview-img').src = src; document.getElementById('preview-aside').style.display = "block"; }
     function hidePrev() { document.getElementById('preview-aside').style.display = "none"; }
 
-    async function motorInteligente(b64) {
+    async function motorCascada(b64) {
         const key = document.getElementById('api-key').value.trim();
         if(!key) return alert("Falta API KEY");
         const loading = document.getElementById('loading');
         loading.style.display = "inline";
 
-        try {
-            // 1. Chequear modelos disponibles
-            const listRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
-            const listData = await listRes.json();
-            const modelosActivos = listData.models ? listData.models.map(m => m.name.split('/').pop()) : [];
+        const PROMPT = "Busca PRODUCTO:CANTIDAD tras la 'x'. Ignora miles. Nombres: Cafe, Pina, Trigo, Remolacha azucarera, Patata, Maiz.";
+        let exito = false;
+
+        for (const mod of MODELOS) {
+            if (exito) break;
+            loading.innerText = `⌛ PROBANDO ${mod.toUpperCase()}...`;
             
-            // 2. Elegir el mejor disponible
-            const modeloAElegir = PRIORIDAD_MODELOS.find(m => modelosActivos.some(ma => ma.includes(m))) || "gemini-1.5-flash";
-            
-            loading.innerText = `⌛ USANDO: ${modeloAElegir.toUpperCase()}...`;
+            try {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${mod}:generateContent?key=${key}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ contents: [{ parts: [
+                        { text: PROMPT },
+                        { inline_data: { mime_type: "image/png", data: b64 } }
+                    ] }] })
+                });
 
-            // 3. Llamar al modelo elegido
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modeloAElegir}:generateContent?key=${key}`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ contents: [{ parts: [
-                    { text: "Busca PRODUCTO:CANTIDAD tras la 'x'. Ignora miles. Nombres: Cafe, Pina, Trigo, Remolacha azucarera, Patata, Maiz." },
-                    { inline_data: { mime_type: "image/png", data: b64 } }
-                ] }] })
-            });
+                const data = await res.json();
+                if (data.candidates && data.candidates[0]) {
+                    procesarIA(data.candidates[0].content.parts[0].text);
+                    exito = true;
+                }
+            } catch (e) { console.warn(mod + " no disponible."); }
+        }
 
-            const json = await res.json();
-            if (json.candidates) procesarIA(json.candidates[0].content.parts[0].text);
-            else throw new Error("Modelo sin respuesta");
-
-        } catch (e) { alert("Fallo Motor: " + e.message); }
+        if (!exito) alert("Ningún modelo respondió. Revisa tu Key.");
         loading.style.display = "none";
         loading.innerText = "⌛ ANALIZANDO...";
     }
