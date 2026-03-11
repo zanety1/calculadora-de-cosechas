@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Calculadora Cosecha PRO - V33 Miniaturas</title>
+    <title>Calculadora Cosecha PRO - V34 Fix Galería</title>
     <style>
         :root { --primary: #1a73e8; --secondary: #673ab7; --success: #34a853; --danger: #ea4335; }
         body { font-family: 'Segoe UI', sans-serif; margin: 20px; background: #f0f2f5; color: #333; }
@@ -15,34 +15,35 @@
         .btn-add { background: var(--success); }
         .btn-clear { background: var(--danger); }
         
-        /* Estilos de la Galería de Miniaturas */
-        #gallery { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-left: 15px; }
-        .thumb-container { position: relative; width: 50px; height: 50px; border-radius: 6px; overflow: hidden; border: 2px solid #ddd; transition: 0.2s; cursor: pointer; }
-        .thumb-container:hover { transform: scale(1.1); border-color: var(--primary); z-index: 10; }
+        /* Galería corregida */
+        #gallery { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin: 15px 0; min-height: 90px; padding: 10px; background: #f9f9f9; border-radius: 10px; }
+        .thumb-container { position: relative; width: 80px; height: 80px; border-radius: 8px; overflow: hidden; border: 3px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: 0.3s; cursor: pointer; background: #eee; }
         .thumb-container img { width: 100%; height: 100%; object-fit: cover; }
-        .thumb-container:hover img { object-fit: contain; background: #000; width: 250px; height: 250px; position: absolute; left: 0; top: 0; }
-        
+        .thumb-container:hover { transform: scale(1.2); z-index: 100; border-color: var(--primary); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .thumb-container:hover img { object-fit: contain; background: #222; width: 300px; height: 300px; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); border-radius: 15px; }
+
         table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
         th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; }
         input { padding: 8px; border: 1px solid #ddd; border-radius: 6px; }
         .res-box { background: #1e1e1e; color: #eee; padding: 15px; border-radius: 10px; margin-top: 10px; font-family: 'Consolas', monospace; position: relative; }
         .res-box b { color: #fbbc05; }
-        #loading { display: none; font-weight: bold; color: var(--secondary); }
+        #loading { display: none; font-weight: bold; color: var(--secondary); animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0.5; } }
     </style>
 </head>
 <body>
 
 <div class="box">
-    <h2 style="color:var(--primary); margin-top:0;">Calculadora de Cosecha PRO 📦 V33</h2>
+    <h2 style="color:var(--primary); margin-top:0;">Calculadora de Cosecha PRO 📦 V34</h2>
 
     <div class="config-panel panel">
         <strong>🔑 API KEY:</strong>
-        <input type="password" id="api-key" style="width: 80%;" oninput="localStorage.setItem('key_harvest_v33', this.value)">
+        <input type="password" id="api-key" style="width: 80%;" oninput="localStorage.setItem('key_harvest_v34', this.value)">
     </div>
 
     <div class="setup-panel panel">
         <strong>👥 Reparto:</strong> Nº Personas 
-        <input type="number" id="n-div" value="2" min="1" style="width:60px;" oninput="actualizarSocios();">
+        <input type="number" id="n-div" value="3" min="1" style="width:60px;" oninput="actualizarSocios();">
         <div id="area-nombres" style="margin-top:10px; display: flex; flex-wrap: wrap;"></div>
     </div>
 
@@ -52,12 +53,11 @@
             📷 SUBIR CAPTURA
             <input type="file" id="file-input" accept="image/*" style="display:none">
         </label>
-        
-        <div id="gallery"></div>
-
-        <span id="loading">⌛ Procesando...</span>
+        <span id="loading">⌛ ANALIZANDO IMAGEN...</span>
         <button class="btn btn-clear" style="margin-left:auto" onclick="limpiarTodo()">🗑️ Limpiar Todo</button>
     </div>
+
+    <div id="gallery"></div>
 
     <table>
         <thead><tr><th>Producto</th><th>Cantidad</th><th>$ (x3)</th><th></th></tr></thead>
@@ -69,22 +69,22 @@
 
 <script>
     const productosBase = ["Remolacha azucarera", "Café", "Piña", "Trigo", "Arándanos", "Patata", "Champiñones", "Cebada", "Maíz"];
-    let imagenesCargadas = JSON.parse(localStorage.getItem('imgs_v33')) || [];
+    let imagenesCargadas = JSON.parse(localStorage.getItem('imgs_v34')) || [];
 
     window.onload = () => {
-        const k = localStorage.getItem('key_harvest_v33');
+        const k = localStorage.getItem('key_harvest_v34');
         if(k) document.getElementById('api-key').value = k;
         actualizarSocios();
         resetDefault();
         renderGaleria();
         document.getElementById('file-input').addEventListener('change', function(e) {
-            if(this.files[0]) procesarImagen(this.files[0]);
+            if(this.files[0]) procesarArchivo(this.files[0]);
         });
     };
 
     function renderGaleria() {
         const gal = document.getElementById('gallery');
-        gal.innerHTML = "";
+        gal.innerHTML = imagenesCargadas.length ? "" : "<small style='color:#999'>No hay fotos cargadas</small>";
         imagenesCargadas.forEach(src => {
             const div = document.createElement('div');
             div.className = "thumb-container";
@@ -93,15 +93,16 @@
         });
     }
 
-    async function procesarImagen(file) {
-        const b64 = await toBase64(file);
-        // Guardar en miniatura
-        imagenesCargadas.push(b64);
-        localStorage.setItem('imgs_v33', JSON.stringify(imagenesCargadas));
+    async function procesarArchivo(file) {
+        const b64Full = await toBase64(file);
+        // Guardar para miniatura
+        imagenesCargadas.push(b64Full);
+        localStorage.setItem('imgs_v34', JSON.stringify(imagenesCargadas));
         renderGaleria();
         
-        // Iniciar IA
-        iniciarIA(b64.split(',')[1]);
+        // Extraer solo la data pura para la API
+        const b64Data = b64Full.split(',')[1];
+        iniciarIA(b64Data);
     }
 
     async function iniciarIA(b64Data) {
@@ -111,14 +112,22 @@
         load.style.display = "inline";
 
         try {
-            const instruccion = "Analiza la imagen. Busca PRODUCTO y xCANTIDAD (tras la x). Ignora KG. Formato: PRODUCTO:CANTIDAD. Sin notas.";
+            const instruccion = "Analiza la imagen. Detecta PRODUCTO y xCANTIDAD (el número después de la x). Ignora KG y semillas. Responde SOLO líneas PRODUCTO:CANTIDAD (ej. Trigo:2924). No des explicaciones.";
+            
             const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
                 method: "POST", headers: {"Content-Type":"application/json"},
                 body: JSON.stringify({contents:[{parts:[{text: instruccion}, {inline_data:{mime_type:"image/png", data:b64Data}}]}]})
             });
             const json = await res.json();
-            if(json.candidates) procesarLimpiezaSuma(json.candidates[0].content.parts[0].text);
-        } catch(e) { alert("Error en el reconocimiento."); }
+            if(json.candidates && json.candidates[0].content) {
+                const textoIA = json.candidates[0].content.parts[0].text;
+                console.log("Respuesta IA:", textoIA);
+                procesarLimpiezaSuma(textoIA);
+            }
+        } catch(e) { 
+            console.error(e);
+            alert("Error al conectar con la IA."); 
+        }
         
         load.style.display = "none";
         document.getElementById('file-input').value = "";
@@ -129,14 +138,14 @@
             if(!linea.includes(':')) return;
             let [nomIA, cantIA] = linea.split(':');
             const num = parseInt(cantIA.replace(/\D/g, '')) || 0;
-            if(num <= 0) return;
+            if(num <= 0 || linea.toLowerCase().includes('kg')) return;
 
             let mejorCoincidencia = null;
             let similitudMaxima = 0;
 
             document.querySelectorAll('#tabla-cuerpo tr').forEach(tr => {
                 const nombreExistente = tr.querySelector('.in-n').value;
-                const score = calcularSimilitud(nomIA.toLowerCase(), nombreExistente.toLowerCase());
+                const score = calcularSimilitud(nomIA.toLowerCase().trim(), nombreExistente.toLowerCase().trim());
                 if (score > similitudMaxima) { similitudMaxima = score; mejorCoincidencia = tr; }
             });
 
@@ -150,7 +159,7 @@
         repartir();
     }
 
-    // Funciones de Similitud (Levenshtein)
+    // Algoritmo de similitud
     function calcularSimilitud(s1, s2) {
         let longer = s1.length < s2.length ? s2 : s1;
         let shorter = s1.length < s2.length ? s1 : s2;
@@ -235,22 +244,4 @@
             const txt = `${g.t}$ - Compra ${g.items.join(' + ')}`;
             h += `<div style="margin-top:10px; font-weight:bold;">${noms[i].toUpperCase()}:</div>
             <div class="res-box"><button class="copy-btn" style="float:right; background:#444; color:white; border:none; padding:4px; cursor:pointer;" onclick="navigator.clipboard.writeText('${txt}')">Copiar</button>
-            <b>${g.t}$</b> - Compra ${g.items.join(' + ') || 'Nada'}</div>`;
-        });
-        document.getElementById('res-equitativo').innerHTML = h;
-    }
-
-    function limpiarTodo() {
-        if(confirm("¿Borrar todo, incluyendo fotos?")) {
-            imagenesCargadas = [];
-            localStorage.removeItem('imgs_v33');
-            renderGaleria();
-            resetDefault();
-            repartir();
-        }
-    }
-
-    function toBase64(f) { return new Promise((res) => { const r = new FileReader(); r.readAsDataURL(f); r.onload = () => res(r.result); }); }
-</script>
-</body>
-</html>
+            <b>${g.t}$</b> - Compra
