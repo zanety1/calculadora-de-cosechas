@@ -3,328 +3,192 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cosecha PRO - Versión 1 (Full Engine)</title>
+    <title>Cosecha PRO - Versión Final 2026</title>
     <style>
         :root { --primary: #1a73e8; --secondary: #673ab7; --success: #34a853; --danger: #ea4335; --dark: #202124; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background: #f8f9fa; display: flex; justify-content: center; }
-        .box { width: 100%; max-width: 950px; background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 20px; background: #f8f9fa; display: flex; justify-content: center; }
+        .box { width: 100%; max-width: 900px; background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
         .panel { padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #e0e0e0; }
         .config-panel { background: #fffdf0; border-left: 5px solid #fbc02d; }
-        .setup-panel { background: #f0f7ff; border-left: 5px solid var(--primary); }
-        
-        .btn { padding: 10px 16px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; color: white; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s; text-decoration: none; }
+        .btn { padding: 10px 16px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; color: white; transition: 0.2s; }
         .btn-ia { background: var(--secondary); }
         .btn-add { background: var(--success); }
         .btn-clear { background: var(--danger); }
-
-        #main-container { display: flex; gap: 20px; width: 100%; max-width: 1300px; }
-        
-        #gallery { display: flex; gap: 10px; flex-wrap: wrap; margin: 15px 0; padding: 10px; background: #fafafa; border-radius: 10px; border: 2px dashed #ccc; min-height: 70px; }
-        .thumb-item { position: relative; width: 70px; height: 70px; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        .thumb-item img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; }
-        .btn-del-img { position: absolute; top: -8px; right: -8px; background: var(--danger); color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-
+        #gallery { display: flex; gap: 10px; flex-wrap: wrap; margin: 15px 0; min-height: 50px; }
+        .thumb-item { width: 70px; height: 70px; border-radius: 8px; object-fit: cover; border: 2px solid #ddd; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; }
-        input[type="text"], input[type="number"] { padding: 8px; border: 1px solid #ddd; border-radius: 6px; width: 90%; font-size: 14px; }
-        
-        .res-box { background: var(--dark); color: #eee; padding: 15px; border-radius: 10px; margin-top: 10px; font-family: 'Consolas', monospace; position: relative; line-height: 1.5; }
-        .copy-btn { position: absolute; top: 10px; right: 10px; background: #444; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 10px; }
-        
-        #sys-msg { display: none; padding: 10px; margin-left: 10px; border-radius: 5px; font-weight: bold; font-size: 13px; max-width: 400px; overflow: hidden; text-overflow: ellipsis; }
-        .msg-loading { background: #e8f0fe; color: var(--primary); display: inline-block !important; }
-        .msg-error { background: #fce8e6; color: var(--danger); display: inline-block !important; border: 1px solid var(--danger); }
-        .msg-success { background: #e6f4ea; color: var(--success); display: inline-block !important; }
-
-        @media (max-width: 800px) { #main-container { flex-direction: column; } }
+        input { padding: 8px; border: 1px solid #ddd; border-radius: 6px; width: 90%; }
+        .res-box { background: var(--dark); color: #eee; padding: 15px; border-radius: 10px; margin-top: 10px; font-family: monospace; position: relative; }
+        #sys-msg { display: none; padding: 10px; border-radius: 5px; font-weight: bold; margin-bottom: 15px; }
+        .msg-loading { background: #e8f0fe; color: var(--primary); display: block !important; }
+        .msg-error { background: #fce8e6; color: var(--danger); display: block !important; }
     </style>
 </head>
 <body>
 
-<div id="main-container">
-    <div class="box">
-        <h2 style="margin:0 0 15px 0; color: var(--dark);">📦 Cosecha PRO - Versión 1</h2>
+<div class="box">
+    <h2>📦 Cosecha PRO - Versión Final</h2>
 
-        <div class="config-panel panel">
-            <strong>🔑 API KEY:</strong>
-            <input type="password" id="api-key" style="width:60%; margin:0 10px;" oninput="localStorage.setItem('v1_key_final', this.value)" placeholder="Pega tu clave de Google AI Studio">
-            <button class="btn btn-clear" style="padding:5px 10px; font-size:11px;" onclick="if(confirm('¿Borrar Key?')){localStorage.removeItem('v1_key_final'); location.reload();}">BORRAR KEY</button>
-        </div>
-
-        <div class="setup-panel panel">
-            <strong>👥 EQUIPO (Socios):</strong> 
-            <input type="number" id="n-soc" value="3" min="1" style="width:60px;" oninput="crearSocios()">
-            <div id="nombres-area" style="display:flex; flex-wrap:wrap; margin-top:10px;"></div>
-        </div>
-
-        <div style="display:flex; gap:10px; align-items:center; flex-wrap: wrap;">
-            <button class="btn btn-add" onclick="nuevaFila('', 0)">➕ AÑADIR FILA</button>
-            <label class="btn btn-ia">
-                📷 ANALIZAR IMAGEN
-                <input type="file" id="file-input" accept="image/*" style="display:none" onchange="subirFoto(this)">
-            </label>
-            <span id="sys-msg"></span>
-            <button class="btn btn-clear" style="margin-left:auto" onclick="limpiarTodo()">🗑️ RESET TOTAL</button>
-        </div>
-
-        <div id="gallery"></div>
-
-        <table>
-            <thead>
-                <tr>
-                    <th style="width: 40%;">Producto</th>
-                    <th style="width: 25%;">Cantidad (x)</th>
-                    <th style="width: 25%;">Valor (Total $)</th>
-                    <th style="width: 10%;"></th>
-                </tr>
-            </thead>
-            <tbody id="cuerpo-tabla"></tbody>
-        </table>
-
-        <div id="zona-reparto" style="margin-top: 30px;"></div>
+    <div class="config-panel panel">
+        <strong>🔑 API KEY:</strong>
+        <input type="password" id="api-key" style="width:70%;" oninput="localStorage.setItem('gemini_final_key', this.value)" placeholder="Pega tu clave de Google AI Studio">
     </div>
+
+    <div style="display:flex; gap:10px; align-items:center;">
+        <button class="btn btn-add" onclick="nuevaFila('', 0)">➕ FILA</button>
+        <label class="btn btn-ia">
+            📷 ANALIZAR FOTO
+            <input type="file" id="file-input" accept="image/*" style="display:none" onchange="procesarFoto(this)">
+        </label>
+        <button class="btn btn-clear" style="margin-left:auto" onclick="limpiar()">🗑️ RESET</button>
+    </div>
+
+    <div id="sys-msg"></div>
+    <div id="gallery"></div>
+
+    <table>
+        <thead><tr><th>Producto</th><th>Cantidad</th><th>Total $</th><th></th></tr></thead>
+        <tbody id="cuerpo"></tbody>
+    </table>
+
+    <div id="zona-reparto"></div>
 </div>
 
 <script>
-    let fotosCargadas = [];
-    const PRODUCTOS_BASE = ["Remolacha azucarera", "Café", "Piña", "Trigo", "Patata", "Maíz"];
+    let fotos = [];
+    const BASE = ["Café", "Remolacha azucarera", "Piña", "Trigo", "Maíz"];
 
     window.onload = () => {
-        const savedKey = localStorage.getItem('v1_key_final');
-        if(savedKey) document.getElementById('api-key').value = savedKey;
-        crearSocios();
-        PRODUCTOS_BASE.forEach(p => nuevaFila(p, 0));
+        const k = localStorage.getItem('gemini_final_key');
+        if(k) document.getElementById('api-key').value = k;
+        BASE.forEach(p => nuevaFila(p, 0));
     };
 
-    function mostrarStatus(texto, tipo) {
+    function mostrarMsg(txt, tipo) {
         const el = document.getElementById('sys-msg');
-        el.className = '';
-        if (tipo) el.classList.add(`msg-${tipo}`);
-        el.innerText = texto;
+        el.className = `msg-${tipo}`;
+        el.innerText = txt;
     }
 
-    function nuevaFila(nombre, cantidad) {
+    function nuevaFila(n, q) {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td><input type="text" class="p-nom" value="${nombre}" oninput="calcularReparto()"></td>
-            <td><input type="number" class="p-cant" value="${cantidad}" oninput="calcularReparto()"></td>
-            <td class="p-val" style="font-weight:bold; color:var(--primary)">${cantidad * 3}$</td>
-            <td><button class="btn-clear" style="padding: 5px; border-radius: 4px;" onclick="this.parentElement.parentElement.remove(); calcularReparto();">✕</button></td>
+            <td><input type="text" class="p-nom" value="${n}" oninput="repartir()"></td>
+            <td><input type="number" class="p-cant" value="${q}" oninput="repartir()"></td>
+            <td class="p-total" style="font-weight:bold">${q*3}$</td>
+            <td><button onclick="this.parentElement.parentElement.remove(); repartir();">✕</button></td>
         `;
-        document.getElementById('cuerpo-tabla').appendChild(tr);
-        calcularReparto();
+        document.getElementById('cuerpo').appendChild(tr);
+        repartir();
     }
 
-    function crearSocios() {
-        const n = document.getElementById('n-soc').value;
-        const contenedor = document.getElementById('nombres-area');
-        const nombresActuales = Array.from(contenedor.querySelectorAll('input')).map(i => i.value);
-        contenedor.innerHTML = "";
-        for(let i=0; i<n; i++) {
-            const input = document.createElement('input');
-            input.className = "socio-input";
-            input.style.width = "120px"; input.style.margin = "4px";
-            input.value = nombresActuales[i] || `Socio ${i+1}`;
-            input.oninput = calcularReparto;
-            contenedor.appendChild(input);
-        }
-        calcularReparto();
-    }
-
-    function subirFoto(input) {
-        const archivo = input.files[0];
-        if(!archivo) return;
+    async function procesarFoto(input) {
+        const file = input.files[0];
+        if(!file) return;
         
-        const lector = new FileReader();
-        lector.onload = async (e) => {
-            fotosCargadas.push(e.target.result);
-            renderizarGaleria();
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.className = 'thumb-item';
+            document.getElementById('gallery').appendChild(img);
             
-            const b64Pura = e.target.result.split(',')[1];
-            const mime = archivo.type || "image/png";
-            await motorIA(b64Pura, mime);
+            const b64 = e.target.result.split(',')[1];
+            await llamarIA(b64, file.type);
         };
-        lector.readAsDataURL(archivo);
-        input.value = "";
+        reader.readAsDataURL(file);
     }
 
-    function renderizarGaleria() {
-        const gal = document.getElementById('gallery');
-        gal.innerHTML = "";
-        fotosCargadas.forEach((src, idx) => {
-            const div = document.createElement('div');
-            div.className = "thumb-item";
-            div.innerHTML = `
-                <img src="${src}">
-                <button class="btn-del-img" onclick="fotosCargadas.splice(${idx},1); renderizarGaleria();">✕</button>
-            `;
-            gal.appendChild(div);
-        });
-    }
-
-    async function motorIA(base64, mime) {
+    async function llamarIA(b64, mime) {
         const key = document.getElementById('api-key').value.trim();
-        if(!key) return mostrarStatus("⚠️ Falta API KEY", "error");
+        if(!key) return mostrarMsg("⚠️ Pega tu API KEY arriba", "error");
 
-        const prompt = "Analiza la imagen del inventario. Busca los nombres de productos y la cantidad que aparece después de la 'x' (ejemplo: x1,354). Devuelve exclusivamente en formato PRODUCTO:CANTIDAD, una por línea. Ignora los kg.";
-        
-        // Estrategia de reintento con múltiples modelos/versiones
+        mostrarMsg("⌛ Analizando imagen...", "loading");
+
+        // LISTA DE RUTAS ACTUALIZADAS (Fallback automático)
         const rutas = [
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${key}`,
             `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${key}`,
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=${key}`,
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${key}`,
+            `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent?key=${key}`
         ];
 
-        let conseguido = false;
-        let errorFinal = "";
+        let exito = false;
+        let errorTxt = "";
 
         for (let url of rutas) {
-            if (conseguido) break;
-            const nombreMod = url.includes("pro") ? "Pro 1.5" : "Flash 1.5";
-            mostrarStatus(`⌛ Probando ${nombreMod}...`, "loading");
-
+            if (exito) break;
             try {
-                const response = await fetch(url, {
+                const res = await fetch(url, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: mime, data: base64 } }] }],
-                        safetySettings: [{ category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }]
+                        contents: [{ parts: [
+                            { text: "Lee el inventario. Busca el nombre y la cantidad tras la 'x'. Formato: PRODUCTO:CANTIDAD. Ejemplo: Cafe:1354. Ignora KG." },
+                            { inline_data: { mime_type: mime, data: b64 } }
+                        ]}]
                     })
                 });
-
-                const data = await response.json();
-
-                if (data.candidates && data.candidates[0]) {
-                    const textoRespuesta = data.candidates[0].content.parts[0].text;
-                    procesarTextoIA(textoRespuesta);
-                    mostrarStatus("✔️ Datos cargados", "success");
-                    conseguido = true;
-                    setTimeout(() => { document.getElementById('sys-msg').style.display = 'none'; }, 3000);
-                } else if (data.error) {
-                    errorFinal = data.error.message;
-                    console.warn("Fallo con modelo:", url, errorFinal);
+                const data = await res.json();
+                if (data.candidates) {
+                    const texto = data.candidates[0].content.parts[0].text;
+                    actualizarTabla(texto);
+                    mostrarMsg("✅ Imagen procesada", "loading");
+                    setTimeout(() => document.getElementById('sys-msg').style.display='none', 2000);
+                    exito = true;
+                } else {
+                    errorTxt = data.error ? data.error.message : "Error desconocido";
                 }
-            } catch (e) {
-                errorFinal = "Error de conexión";
-            }
+            } catch (e) { errorTxt = "Error de conexión"; }
         }
 
-        if (!conseguido) {
-            mostrarStatus(`❌ Error: ${errorFinal}`, "error");
-        }
+        if (!exito) mostrarMsg(`❌ Error: ${errorTxt}`, "error");
     }
 
-    function procesarTextoIA(texto) {
-        const lineas = texto.split('\n');
-        lineas.forEach(linea => {
-            const limpia = linea.replace(/[*_#]/g, '').trim();
-            if(!limpia.includes(':')) return;
+    function actualizarTabla(texto) {
+        texto.split('\n').forEach(linea => {
+            if(!linea.includes(':')) return;
+            const [nIA, qRaw] = linea.split(':');
+            // ELIMINAR COMAS DE MILES (Crucial para x1,354 -> 1354)
+            const qClean = parseInt(qRaw.replace(/,/g, '').replace(/\D/g, '')) || 0;
 
-            const [nombreIA, cantIA] = limpia.split(':');
-            // Quitamos comas de miles y cualquier cosa no numérica
-            const cantidadNum = parseInt(cantIA.replace(/,/g, '').replace(/\D/g, '')) || 0;
-
-            if (cantidadNum > 0) {
-                let existe = false;
-                document.querySelectorAll('#cuerpo-tabla tr').forEach(fila => {
-                    const nombreFila = fila.querySelector('.p-nom').value.toLowerCase();
-                    const nBusqueda = nombreIA.toLowerCase().trim();
-                    
-                    if (nombreFila.includes(nBusqueda) || nBusqueda.includes(nombreFila)) {
-                        const inputCant = fila.querySelector('.p-cant');
-                        inputCant.value = (parseInt(inputCant.value) || 0) + cantidadNum;
-                        existe = true;
-                    }
-                });
-
-                if (!existe) nuevaFila(nombreIA.trim(), cantidadNum);
-            }
-        });
-        calcularReparto();
-    }
-
-    function calcularReparto() {
-        const sociosInp = document.querySelectorAll('.socio-input');
-        const numSocios = sociosInp.length || 1;
-        const nombresSocios = Array.from(sociosInp).map(i => i.value);
-        
-        let itemsValidos = [];
-        let granTotal = 0;
-
-        document.querySelectorAll('#cuerpo-tabla tr').forEach(fila => {
-            const nom = fila.querySelector('.p-nom').value;
-            const cant = parseInt(fila.querySelector('.p-cant').value) || 0;
-            const subtotal = cant * 3;
-            fila.querySelector('.p-val').innerText = subtotal + "$";
-            
-            if (cant > 0) {
-                itemsValidos.push({ nom, cant });
-                granTotal += subtotal;
-            }
-        });
-
-        const objetivoPorSocio = granTotal / numSocios;
-        let reparto = Array.from({ length: numSocios }, () => ({ lista: [], totalCaja: 0 }));
-        
-        let socioActual = 0;
-        itemsValidos.forEach(item => {
-            let cantidadRestante = item.cant;
-            while (cantidadRestante > 0 && socioActual < numSocios) {
-                let espacioEnDolares = objetivoPorSocio - reparto[socioActual].totalCaja;
-                let unidadesQueCaben = Math.floor(espacioEnDolares / 3);
-                
-                let dar = (socioActual === numSocios - 1) ? cantidadRestante : Math.min(cantidadRestante, unidadesQueCaben);
-                
-                if (dar > 0) {
-                    reparto[socioActual].lista.push(`${dar} ${item.nom}`);
-                    reparto[socioActual].totalCaja += (dar * 3);
-                    cantidadRestante -= dar;
+            let h = false;
+            document.querySelectorAll('#cuerpo tr').forEach(tr => {
+                const nomFila = tr.querySelector('.p-nom').value.toLowerCase();
+                const nomIA = nIA.toLowerCase().trim();
+                if(nomFila.includes(nomIA) || nomIA.includes(nomFila)) {
+                    const inp = tr.querySelector('.p-cant');
+                    inp.value = (parseInt(inp.value) || 0) + qClean;
+                    h = true;
                 }
-                
-                if (cantidadRestante > 0 && socioActual < numSocios - 1) socioActual++;
-                else break;
-            }
-        });
-
-        // Generar HTML de resultados
-        let html = `<div style="background:#eee; padding:12px; border-radius:10px; font-weight:bold;">💰 TOTAL MERCADO: ${granTotal}$</div>`;
-        reparto.forEach((rep, i) => {
-            // Agrupar nombres repetidos en el reparto
-            let agrupado = {};
-            rep.lista.forEach(x => {
-                let partes = x.split(' ');
-                let c = parseInt(partes.shift());
-                let n = partes.join(' ');
-                agrupado[n] = (agrupado[n] || 0) + c;
             });
-            let resumen = Object.entries(agrupado).map(([n, c]) => `${c} ${n}`).join(' + ');
-            const textoCopiar = `${rep.totalCaja}$ - Compra ${resumen}`;
-
-            html += `
-                <div style="margin-top:15px;">
-                    <strong>${nombresSocios[i].toUpperCase()}</strong>
-                    <div class="res-box">
-                        <button class="copy-btn" onclick="navigator.clipboard.writeText('${textoCopiar}')">COPIAR</button>
-                        <span style="color:#fbc02d; font-weight:bold;">${rep.totalCaja}$</span> - Compra ${resumen || 'Nada'}
-                    </div>
-                </div>
-            `;
+            if(!h && qClean > 0) nuevaFila(nIA.trim(), qClean);
         });
-        document.getElementById('zona-reparto').innerHTML = html;
+        repartir();
     }
 
-    function limpiarTodo() {
-        if(confirm("¿Seguro que quieres borrar todo el inventario y las fotos?")) {
-            document.getElementById('cuerpo-tabla').innerHTML = "";
-            fotosCargadas = [];
-            renderizarGaleria();
-            PRODUCTOS_BASE.forEach(p => nuevaFila(p, 0));
-            document.getElementById('sys-msg').style.display = 'none';
+    function repartir() {
+        let total = 0;
+        document.querySelectorAll('#cuerpo tr').forEach(tr => {
+            const q = parseInt(tr.querySelector('.p-cant').value) || 0;
+            tr.querySelector('.p-total').innerText = (q*3) + "$";
+            total += (q*3);
+        });
+        const porPersona = Math.floor(total / 3);
+        document.getElementById('zona-reparto').innerHTML = `
+            <div class="res-box">
+                <strong>REPARTO (3 personas):</strong> Total: ${total}$ | 
+                <strong>Cada uno: ${porPersona}$</strong>
+            </div>`;
+    }
+
+    function limpiar() {
+        if(confirm("¿Borrar todo?")) {
+            document.getElementById('cuerpo').innerHTML = "";
+            document.getElementById('gallery').innerHTML = "";
+            BASE.forEach(p => nuevaFila(p, 0));
         }
     }
 </script>
-
 </body>
 </html>
