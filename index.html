@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Cosecha PRO V46 - Full Features</title>
+    <title>Cosecha PRO - Versión 1 (Motor Adaptativo)</title>
     <style>
         :root { --primary: #1a73e8; --secondary: #673ab7; --success: #34a853; --danger: #ea4335; --dark: #202124; }
         body { font-family: 'Segoe UI', sans-serif; margin: 20px; background: #f8f9fa; display: flex; justify-content: center; }
@@ -10,29 +10,21 @@
         .panel { padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #e0e0e0; }
         .config-panel { background: #fffdf0; border-left: 5px solid #fbc02d; }
         .setup-panel { background: #f0f7ff; border-left: 5px solid var(--primary); }
-        
-        .btn { padding: 10px 16px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; color: white; display: inline-flex; align-items: center; gap: 8px; }
+        .btn { padding: 10px 16px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; color: white; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s; }
         .btn-ia { background: var(--secondary); }
         .btn-add { background: var(--success); }
         .btn-clear { background: var(--danger); }
-
         #main-container { display: flex; gap: 20px; width: 100%; max-width: 1300px; }
-        
-        /* GALERÍA Y MINIATURAS */
         #gallery { display: flex; gap: 10px; flex-wrap: wrap; margin: 15px 0; padding: 10px; background: #fafafa; border-radius: 10px; border: 2px dashed #ccc; min-height: 70px; }
         .thumb-item { position: relative; width: 70px; height: 70px; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.2); cursor: pointer; }
         .thumb-item img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; }
-        .btn-del-img { position: absolute; top: -8px; right: -8px; background: var(--danger); color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; cursor: pointer; }
-
-        /* VISTA PREVIA LATERAL */
-        #preview-aside { width: 320px; position: sticky; top: 20px; height: fit-content; background: #000; border-radius: 15px; overflow: hidden; border: 4px solid var(--primary); display: none; }
+        .btn-del-img { position: absolute; top: -8px; right: -8px; background: var(--danger); color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; cursor: pointer; border: 1px solid white; }
+        #preview-aside { width: 320px; position: sticky; top: 20px; height: fit-content; background: #000; border-radius: 15px; overflow: hidden; border: 4px solid var(--primary); display: none; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         #preview-aside img { width: 100%; display: block; }
-
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { text-align: left; padding: 10px; border-bottom: 1px solid #eee; }
-        input { padding: 8px; border: 1px solid #ddd; border-radius: 6px; }
-        
-        .res-box { background: var(--dark); color: #eee; padding: 15px; border-radius: 10px; margin-top: 10px; font-family: monospace; position: relative; }
+        input { padding: 8px; border: 1px solid #ddd; border-radius: 6px; width: 90%; }
+        .res-box { background: var(--dark); color: #eee; padding: 15px; border-radius: 10px; margin-top: 10px; font-family: 'Consolas', monospace; position: relative; }
         .copy-btn { position: absolute; top: 10px; right: 10px; background: #444; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 10px; }
         #loading { display: none; color: var(--secondary); font-weight: bold; margin-left: 10px; }
     </style>
@@ -41,52 +33,43 @@
 
 <div id="main-container">
     <div class="box">
-        <h2 style="margin:0 0 15px 0;">📦 Cosecha PRO V46 - Edición Total</h2>
+        <h2 style="margin:0 0 15px 0;">📦 Cosecha PRO - Versión 1 (Full Motor)</h2>
 
         <div class="config-panel panel">
             <strong>🔑 API KEY:</strong>
-            <input type="password" id="api-key" style="width:60%;" oninput="localStorage.setItem('h_key_v46', this.value)">
-            <button class="btn btn-clear" style="padding:5px 10px; font-size:11px;" onclick="if(confirm('¿Borrar Key?')){localStorage.removeItem('h_key_v46'); location.reload();}">BORRAR KEY</button>
+            <input type="password" id="api-key" style="width:60%; margin:0 10px;" oninput="localStorage.setItem('v1_key', this.value)">
+            <button class="btn btn-clear" style="padding:5px 10px; font-size:11px;" onclick="if(confirm('¿Borrar Key?')){localStorage.removeItem('v1_key'); location.reload();}">BORRAR KEY</button>
         </div>
 
         <div class="setup-panel panel">
-            <strong>👥 SOCIOS:</strong> 
+            <strong>👥 EQUIPO:</strong> 
             <input type="number" id="n-soc" value="3" min="1" style="width:50px;" oninput="crearSocios()">
             <div id="nombres-area" style="display:flex; flex-wrap:wrap; margin-top:10px;"></div>
         </div>
 
         <div style="display:flex; gap:10px; align-items:center;">
             <button class="btn btn-add" onclick="nuevaFila('', 0)">➕ FILA</button>
-            <label class="btn btn-ia">
-                📷 ANALIZAR IMAGEN
-                <input type="file" id="file-input" accept="image/*" style="display:none" onchange="subirFoto(this)">
-            </label>
-            <span id="loading">⌛ ANALIZANDO...</span>
-            <button class="btn btn-clear" style="margin-left:auto" onclick="limpiar()">🗑️ RESET TABLA</button>
+            <label class="btn btn-ia">📷 ANALIZAR IMAGEN<input type="file" id="file-input" accept="image/*" style="display:none" onchange="subirFoto(this)"></label>
+            <span id="loading">⌛ BUSCANDO MODELO...</span>
         </div>
 
         <div id="gallery"></div>
-
         <table>
-            <thead><tr><th>Producto</th><th>Cantidad</th><th>Total $</th><th></th></tr></thead>
+            <thead><tr><th>Producto</th><th>Cantidad</th><th>Valor ($)</th><th></th></tr></thead>
             <tbody id="cuerpo"></tbody>
         </table>
-
         <div id="resultados"></div>
     </div>
-
-    <aside id="preview-aside">
-        <div style="color:white; padding:8px; font-size:11px; text-align:center; background:var(--primary);">VISTA PREVIA</div>
-        <img id="preview-img" src="">
-    </aside>
+    <aside id="preview-aside"><img id="preview-img" src=""></aside>
 </div>
 
 <script>
     let fotos = [];
-    const BASE = ["Remolacha azucarera", "Café", "Piña", "Trigo", "Patata", "Champiñones"];
+    const BASE = ["Remolacha azucarera", "Café", "Piña", "Trigo", "Patata", "Maíz"];
+    const PRIORIDAD_MODELOS = ["gemini-1.5-pro", "gemini-1.5-flash", "gemini-pro-vision"];
 
     window.onload = () => {
-        const k = localStorage.getItem('h_key_v46');
+        const k = localStorage.getItem('v1_key');
         if(k) document.getElementById('api-key').value = k;
         crearSocios();
         BASE.forEach(p => nuevaFila(p, 0));
@@ -94,12 +77,10 @@
 
     function nuevaFila(n, q) {
         const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td><input type="text" class="in-n" value="${n}" oninput="repartir()"></td>
+        tr.innerHTML = `<td><input type="text" class="in-n" value="${n}" oninput="repartir()"></td>
             <td><input type="number" class="in-q" value="${q}" oninput="repartir()"></td>
             <td class="vd" style="font-weight:bold; color:var(--primary)">${q*3}$</td>
-            <td><button onclick="this.parentElement.parentElement.remove(); repartir();">✕</button></td>
-        `;
+            <td><button onclick="this.parentElement.parentElement.remove(); repartir();">✕</button></td>`;
         document.getElementById('cuerpo').appendChild(tr);
         repartir();
     }
@@ -126,49 +107,58 @@
         reader.onload = async (e) => {
             fotos.push(e.target.result);
             renderGaleria();
-            await llamarIA(e.target.result.split(',')[1]);
+            await motorInteligente(e.target.result.split(',')[1]);
         };
         reader.readAsDataURL(input.files[0]);
-        input.value = "";
     }
 
     function renderGaleria() {
-        const gal = document.getElementById('gallery');
-        gal.innerHTML = "";
+        const gal = document.getElementById('gallery'); gal.innerHTML = "";
         fotos.forEach((src, i) => {
-            const d = document.createElement('div');
-            d.className = "thumb-item";
+            const d = document.createElement('div'); d.className = "thumb-item";
             d.innerHTML = `<img src="${src}" onmouseover="showPrev('${src}')" onmouseout="hidePrev()">
                            <button class="btn-del-img" onclick="fotos.splice(${i},1); renderGaleria();">✕</button>`;
             gal.appendChild(d);
         });
     }
 
-    function showPrev(src) { 
-        document.getElementById('preview-img').src = src;
-        document.getElementById('preview-aside').style.display = "block";
-    }
+    function showPrev(src) { document.getElementById('preview-img').src = src; document.getElementById('preview-aside').style.display = "block"; }
     function hidePrev() { document.getElementById('preview-aside').style.display = "none"; }
 
-    async function llamarIA(b64) {
+    async function motorInteligente(b64) {
         const key = document.getElementById('api-key').value.trim();
-        if(!key) return alert("Pega la API KEY");
-        document.getElementById('loading').style.display = "inline";
+        if(!key) return alert("Falta API KEY");
+        const loading = document.getElementById('loading');
+        loading.style.display = "inline";
 
         try {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+            // 1. Chequear modelos disponibles
+            const listRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
+            const listData = await listRes.json();
+            const modelosActivos = listData.models ? listData.models.map(m => m.name.split('/').pop()) : [];
+            
+            // 2. Elegir el mejor disponible
+            const modeloAElegir = PRIORIDAD_MODELOS.find(m => modelosActivos.some(ma => ma.includes(m))) || "gemini-1.5-flash";
+            
+            loading.innerText = `⌛ USANDO: ${modeloAElegir.toUpperCase()}...`;
+
+            // 3. Llamar al modelo elegido
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modeloAElegir}:generateContent?key=${key}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ contents: [{ parts: [
-                    { text: "Extrae PRODUCTO:CANTIDAD tras la 'x'. Ignora KG. Nombres: Cafe, Pina, Trigo, Remolacha azucarera, Patata." },
+                    { text: "Busca PRODUCTO:CANTIDAD tras la 'x'. Ignora miles. Nombres: Cafe, Pina, Trigo, Remolacha azucarera, Patata, Maiz." },
                     { inline_data: { mime_type: "image/png", data: b64 } }
                 ] }] })
             });
+
             const json = await res.json();
-            if (json.candidates && json.candidates[0]) procesarIA(json.candidates[0].content.parts[0].text);
-            else throw new Error("IA sin respuesta");
-        } catch (e) { alert("Error: " + e.message); }
-        document.getElementById('loading').style.display = "none";
+            if (json.candidates) procesarIA(json.candidates[0].content.parts[0].text);
+            else throw new Error("Modelo sin respuesta");
+
+        } catch (e) { alert("Fallo Motor: " + e.message); }
+        loading.style.display = "none";
+        loading.innerText = "⌛ ANALIZANDO...";
     }
 
     function procesarIA(t) {
@@ -202,18 +192,6 @@
         });
 
         const obj = total / n;
-
-        // Reparto 1: Equitativo
-        let eq = Array.from({length: n}, () => ({l:[], t:0}));
-        let pE = 0;
-        items.forEach(it => {
-            let base = Math.floor(it.q / n), sob = it.q % n;
-            for(let i=0; i<n; i++) if(base > 0) { eq[i].l.push(`${base} ${it.nom}`); eq[i].t += base*3; }
-            for(let j=0; j<sob; j++) { let idx = (pE + j) % n; eq[idx].l.push(`1 ${it.nom}`); eq[idx].t += 3; }
-            pE = (pE + sob) % n;
-        });
-
-        // Reparto 2: Rápido (Consolidado)
         let ra = Array.from({length: n}, () => ({l:[], t:0}));
         let sIdx = 0;
         items.forEach(it => {
@@ -226,28 +204,20 @@
             }
         });
 
-        dibujar(eq, ra, noms);
-    }
-
-    function dibujar(eq, ra, noms) {
-        let h = `<h3 style="background:#eee;padding:10px;border-radius:8px;">⚖️ OPCIÓN 1: REPARTO EQUITATIVO</h3>`;
-        eq.forEach((s, i) => h += fmt(noms[i], s));
-        h += `<h3 style="background:#eee;padding:10px;border-radius:8px;margin-top:20px;">⚡ OPCIÓN 2: REPARTO RÁPIDO</h3>`;
-        ra.forEach((s, i) => h += fmt(noms[i], s));
+        let h = `<div style="background:#eee;padding:10px;border-radius:8px;font-weight:bold">⚡ REPARTO OPTIMIZADO (${total}$)</div>`;
+        ra.forEach((s, i) => {
+            let ag = {};
+            s.l.forEach(x => { let p = x.split(' '); let c = p.shift(); let nm = p.join(' '); ag[nm] = (ag[nm] || 0) + parseInt(c); });
+            let res = []; for(let p in ag) res.push(`${ag[p]} ${p}`);
+            const txt = `${s.t}$ - Compra ${res.join(' + ')}`;
+            h += `<div style="margin-top:10px;"><strong>${noms[i].toUpperCase()}</strong>
+                <div class="res-box"><button class="copy-btn" onclick="navigator.clipboard.writeText('${txt}')">COPIAR</button>
+                <b style="color:#fbc02d">${s.t}$</b> - Compra ${res.join(' + ') || 'Nada'}</div></div>`;
+        });
         document.getElementById('resultados').innerHTML = h;
     }
 
-    function fmt(nom, s) {
-        let ag = {};
-        s.l.forEach(i => { let p = i.split(' '); let c = p.shift(); let nm = p.join(' '); ag[nm] = (ag[nm] || 0) + parseInt(c); });
-        let res = []; for(let p in ag) res.push(`${ag[p]} ${p}`);
-        const txt = `${s.t}$ - Compra ${res.join(' + ')}`;
-        return `<div style="margin-top:10px;"><strong>${nom.toUpperCase()}</strong>
-                <div class="res-box"><button class="copy-btn" onclick="navigator.clipboard.writeText('${txt}')">COPIAR</button>
-                <b style="color:#fbc02d">${s.t}$</b> - Compra ${res.join(' + ') || 'Nada'}</div></div>`;
-    }
-
-    function limpiar() { if(confirm("¿Reset?")) { document.getElementById('cuerpo').innerHTML=""; BASE.forEach(p=>nuevaFila(p,0)); } }
+    function limpiar() { if(confirm("¿Reset?")) { document.getElementById('cuerpo').innerHTML=""; BASE.forEach(p=>nuevaFila(p,0)); fotos=[]; renderGaleria(); } }
 </script>
 </body>
 </html>
