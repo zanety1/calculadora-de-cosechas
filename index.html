@@ -2,75 +2,83 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Calculadora Cosecha PRO - V36 Fix API & Preview</title>
+    <title>Calculadora Cosecha PRO - V37 Final Fix</title>
     <style>
         :root { --primary: #1a73e8; --secondary: #673ab7; --success: #34a853; --danger: #ea4335; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 20px; background: #f0f2f5; color: #333; }
-        .box { max-width: 1000px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); position: relative; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 20px; background: #f0f2f5; display: flex; justify-content: center; }
+        .box { width: 100%; max-width: 900px; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
         
+        /* Paneles */
         .panel { padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #ddd; }
         .config-panel { background: #fff3e0; }
         .setup-panel { background: #e8f0fe; border-left: 5px solid var(--primary); }
         
+        /* Botones y Controles */
         .btn { padding: 10px 18px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; display: inline-flex; align-items: center; gap: 8px; }
         .btn-ia { background: var(--secondary); }
         .btn-add { background: var(--success); }
         .btn-clear { background: var(--danger); }
         
-        /* Galería y Miniaturas */
-        #gallery { display: flex; gap: 10px; flex-wrap: wrap; margin: 15px 0; padding: 10px; background: #fafafa; border-radius: 10px; border: 1px solid #eee; }
-        .thumb-item { position: relative; width: 60px; height: 60px; cursor: pointer; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        /* Galería y Preview Lateral */
+        #main-container { display: flex; gap: 20px; width: 100%; max-width: 1200px; }
+        #gallery { display: flex; gap: 10px; flex-wrap: wrap; margin: 15px 0; padding: 10px; background: #fafafa; border-radius: 10px; border: 1px solid #eee; min-height: 60px; }
+        .thumb-item { position: relative; width: 60px; height: 60px; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; }
         .thumb-item img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; }
-        .btn-del-img { position: absolute; top: -5px; right: -5px; background: red; color: white; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; cursor: pointer; }
+        .btn-del-img { position: absolute; top: -8px; right: -8px; background: var(--danger); color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; cursor: pointer; z-index: 5; }
 
-        /* Ventana Flotante de Preview (Lado derecho) */
-        #floating-preview { position: fixed; top: 20px; right: 20px; width: 250px; height: 250px; background: #000; border: 3px solid var(--primary); border-radius: 12px; display: none; z-index: 1000; box-shadow: 0 10px 25px rgba(0,0,0,0.5); overflow: hidden; }
-        #floating-preview img { width: 100%; height: 100%; object-fit: contain; }
+        #preview-aside { width: 300px; position: sticky; top: 20px; height: fit-content; background: #000; border-radius: 12px; overflow: hidden; border: 4px solid var(--primary); display: none; }
+        #preview-aside img { width: 100%; display: block; }
 
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; }
-        input { padding: 8px; border: 1px solid #ddd; border-radius: 6px; width: 85%; }
+        input { padding: 8px; border: 1px solid #ddd; border-radius: 6px; width: 90%; }
         
         .res-box { background: #1e1e1e; color: #eee; padding: 15px; border-radius: 10px; margin-top: 10px; font-family: monospace; position: relative; }
-        #loading { display: none; color: var(--secondary); font-weight: bold; margin-left: 10px; }
+        #loading { display: none; color: var(--secondary); font-weight: bold; margin-left: 10px; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0.4; } }
     </style>
 </head>
 <body>
 
-<div id="floating-preview"><img id="preview-img" src=""></div>
+<div id="main-container">
+    <div class="box">
+        <h2 style="color:var(--primary); margin:0 0 20px 0;">Cosecha PRO V37 - Final Fix 📦</h2>
 
-<div class="box">
-    <h2 style="color:var(--primary); margin-top:0;">Calculadora de Cosecha V36 📦</h2>
+        <div class="config-panel panel">
+            <strong>🔑 API KEY:</strong>
+            <input type="password" id="api-key" placeholder="Pega tu clave aquí..." oninput="localStorage.setItem('h_key_v37', this.value)">
+        </div>
 
-    <div class="config-panel panel">
-        <strong>🔑 API KEY:</strong>
-        <input type="password" id="api-key" placeholder="Pega tu clave aquí..." oninput="localStorage.setItem('h_key_v36', this.value)">
+        <div class="setup-panel panel">
+            <strong>👥 Socios:</strong> 
+            <input type="number" id="n-soc" value="3" min="1" style="width:60px;" oninput="crearSocios()">
+            <div id="nombres-area" style="display:flex; flex-wrap:wrap; margin-top:10px;"></div>
+        </div>
+
+        <div style="display:flex; gap:10px; align-items:center;">
+            <button class="btn btn-add" onclick="nuevaFila('', 0)">➕ Fila</button>
+            <label class="btn btn-ia">
+                📷 SUBIR FOTO
+                <input type="file" id="file-input" accept="image/*" style="display:none" onchange="subirFoto(this)">
+            </label>
+            <span id="loading">⌛ ANALIZANDO...</span>
+            <button class="btn btn-clear" style="margin-left:auto" onclick="limpiar()">🗑️ BORRAR</button>
+        </div>
+
+        <div id="gallery"></div>
+
+        <table>
+            <thead><tr><th>Producto</th><th>Cantidad</th><th>$ (x3)</th><th></th></tr></thead>
+            <tbody id="cuerpo"></tbody>
+        </table>
+
+        <div id="resultados"></div>
     </div>
 
-    <div class="setup-panel panel">
-        <strong>👥 Socios:</strong> 
-        <input type="number" id="n-soc" value="3" min="1" style="width:50px;" oninput="crearSocios()">
-        <div id="nombres-area" style="display:flex; flex-wrap:wrap; margin-top:10px;"></div>
-    </div>
-
-    <div style="display:flex; gap:10px; align-items:center;">
-        <button class="btn btn-add" onclick="nuevaFila('', 0)">➕ Fila</button>
-        <label class="btn btn-ia">
-            📷 CARGAR FOTO
-            <input type="file" id="file-input" accept="image/*" style="display:none" onchange="subirFoto(this)">
-        </label>
-        <span id="loading">⌛ ANALIZANDO...</span>
-        <button class="btn btn-clear" style="margin-left:auto" onclick="limpiar()">🗑️ BORRAR</button>
-    </div>
-
-    <div id="gallery"></div>
-
-    <table>
-        <thead><tr><th>Producto</th><th>Cantidad</th><th>$ (x3)</th><th></th></tr></thead>
-        <tbody id="cuerpo"></tbody>
-    </table>
-
-    <div id="resultados"></div>
+    <aside id="preview-aside">
+        <div style="color:white; padding:5px; font-size:10px; text-align:center; background:var(--primary)">VISTA PREVIA</div>
+        <img id="preview-img" src="">
+    </aside>
 </div>
 
 <script>
@@ -78,7 +86,7 @@
     const BASE = ["Remolacha azucarera", "Café", "Piña", "Trigo", "Arándanos", "Patata", "Champiñones", "Cebada", "Maíz"];
 
     window.onload = () => {
-        const k = localStorage.getItem('h_key_v36');
+        const k = localStorage.getItem('h_key_v37');
         if(k) document.getElementById('api-key').value = k;
         crearSocios();
         BASE.forEach(p => nuevaFila(p, 0));
@@ -99,11 +107,12 @@
     function crearSocios() {
         const n = document.getElementById('n-soc').value;
         const area = document.getElementById('nombres-area');
+        const actuales = Array.from(area.querySelectorAll('input')).map(i => i.value);
         area.innerHTML = "";
         for(let i=0; i<n; i++) {
             const inp = document.createElement('input');
-            inp.style.width = "100px"; inp.style.margin = "4px";
-            inp.value = `Socio ${i+1}`;
+            inp.style.width = "110px"; inp.style.margin = "4px";
+            inp.value = actuales[i] || `Socio ${i+1}`;
             inp.className = "soc-nom";
             inp.oninput = repartir;
             area.appendChild(inp);
@@ -132,40 +141,54 @@
             const d = document.createElement('div');
             d.className = "thumb-item";
             d.innerHTML = `<img src="${src}" onmouseover="showPrev('${src}')" onmouseout="hidePrev()">
-                           <button class="btn-del-img" onclick="borrarFoto(${i})">x</button>`;
+                           <button class="btn-del-img" onclick="borrarFoto(${i})">✕</button>`;
             gal.appendChild(d);
         });
     }
 
     function showPrev(src) { 
-        const p = document.getElementById('floating-preview');
         document.getElementById('preview-img').src = src;
-        p.style.display = "block";
+        document.getElementById('preview-aside').style.display = "block";
     }
-    function hidePrev() { document.getElementById('floating-preview').style.display = "none"; }
+    function hidePrev() { document.getElementById('preview-aside').style.display = "none"; }
 
     function borrarFoto(i) { fotos.splice(i,1); renderGaleria(); }
 
-    async function llamarIA(data) {
-        const key = document.getElementById('api-key').value;
+    async function llamarIA(dataB64) {
+        const key = document.getElementById('api-key').value.trim();
         const load = document.getElementById('loading');
         if(!key) return alert("Pega la API KEY");
         load.style.display = "inline";
 
         try {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ contents: [{ parts: [
-                    { text: "Analiza la imagen. Extrae PRODUCTO:CANTIDAD (el número tras la x, ignora KG). Ejemplo: Trigo:2500. Sin texto extra." },
-                    { inline_data: { mime_type: "image/png", data: data } }
-                ] }] })
+                body: JSON.stringify({ 
+                    contents: [{ parts: [
+                        { text: "Analiza la imagen. Devuelve únicamente el nombre del producto y la cantidad después de la 'x'. Ignora kg. Formato: Producto:Cantidad. Ejemplo: Trigo:2500" },
+                        { inline_data: { mime_type: "image/png", data: dataB64 } }
+                    ] }] 
+                })
             });
-            const json = await res.json();
+
+            const json = await response.json();
+            
+            if (json.error) {
+                throw new Error(json.error.message);
+            }
+
+            if (!json.candidates || json.candidates.length === 0) {
+                throw new Error("La IA no devolvió resultados. Intenta con otra foto.");
+            }
+
             const texto = json.candidates[0].content.parts[0].text;
             procesarIA(texto);
-        } catch (e) { alert("Error API: " + e.message); }
-        load.style.display = "none";
+        } catch (e) { 
+            alert("Error en el reconocimiento: " + e.message); 
+        } finally {
+            load.style.display = "none";
+        }
     }
 
     function procesarIA(t) {
@@ -176,16 +199,16 @@
             const qIA = parseInt(p[1].replace(/\D/g, '')) || 0;
             if(qIA <= 0) return;
 
-            let h = false;
+            let hallado = false;
             document.querySelectorAll('#cuerpo tr').forEach(tr => {
                 const nFil = tr.querySelector('.in-n').value.toLowerCase();
-                if(dist(nIA, nFil) > 0.75) {
+                if(nFil.includes(nIA) || nIA.includes(nFil)) {
                     const iQ = tr.querySelector('.in-q');
                     iQ.value = (parseInt(iQ.value) || 0) + qIA;
-                    h = true;
+                    hallado = true;
                 }
             });
-            if(!h) nuevaFila(p[0].trim(), qIA);
+            if(!hallado) nuevaFila(p[0].trim(), qIA);
         });
         repartir();
     }
@@ -196,47 +219,31 @@
         let items = [];
         document.querySelectorAll('#cuerpo tr').forEach(tr => {
             const q = parseInt(tr.querySelector('.in-q').value) || 0;
-            const n = tr.querySelector('.in-n').value;
+            const nom = tr.querySelector('.in-n').value;
             tr.querySelector('.vd').innerText = (q*3) + "$";
-            if(q > 0) items.push({n, q});
+            if(q > 0) items.push({nom, q});
         });
 
-        let res = Array.from({length: n}, () => ({l:[], t:0}));
+        let reparto = Array.from({length: n}, () => ({l:[], t:0}));
         let punt = 0;
         items.forEach(it => {
             let base = Math.floor(it.q / n), sob = it.q % n;
-            for(let i=0; i<n; i++) if(base > 0) { res[i].l.push(`${base} ${it.n}`); res[i].t += base*3; }
+            for(let i=0; i<n; i++) if(base > 0) { reparto[i].l.push(`${base} ${it.nom}`); reparto[i].t += base*3; }
             for(let j=0; j<sob; j++) {
                 let idx = (punt + j) % n;
-                res[idx].l.push(`1 ${it.n}`); res[idx].t += 3;
+                reparto[idx].l.push(`1 ${it.nom}`); reparto[idx].t += 3;
             }
             punt = (punt + sob) % n;
         });
 
-        let h = `<h3 style="margin-top:30px; border-top:2px solid #ddd; padding-top:15px;">⚖️ Reparto Final</h3>`;
-        res.forEach((s, i) => {
-            const c = `${s.t}$ - ${s.l.join(' + ')}`;
-            h += `<div style="margin-bottom:10px;"><b>${noms[i]}</b>
-                  <div class="res-box"><button style="float:right" onclick="navigator.clipboard.writeText('${c}')">Copiar</button>
+        let html = `<h3 style="margin-top:25px; border-top:2px solid #ddd; padding-top:15px;">⚖️ Reparto Final</h3>`;
+        reparto.forEach((s, i) => {
+            const copia = `${s.t}$ - ${s.l.join(' + ')}`;
+            html += `<div style="margin-bottom:10px;"><b>${noms[i].toUpperCase()}</b>
+                  <div class="res-box"><button style="float:right; cursor:pointer" onclick="navigator.clipboard.writeText('${copia}')">Copiar</button>
                   <b>${s.t}$</b> - Compra ${s.l.join(' + ') || 'Nada'}</div></div>`;
         });
-        document.getElementById('resultados').innerHTML = h;
-    }
-
-    function dist(s1, s2) {
-        let longer = s1.length < s2.length ? s2 : s1;
-        let shorter = s1.length < s2.length ? s1 : s2;
-        if (longer.length === 0) return 1.0;
-        const edit = (function(a,b){
-            let m=[], i, j;
-            for(i=0; i<=a.length; i++) m[i]=[i];
-            for(j=0; j<=b.length; j++) m[0][j]=j;
-            for(i=1; i<=a.length; i++)
-                for(j=1; j<=b.length; j++)
-                    m[i][j] = a[i-1]===b[j-1] ? m[i-1][j-1] : Math.min(m[i-1][j-1], m[i][j-1], m[i-1][j]) + 1;
-            return m[a.length][b.length];
-        })(longer, shorter);
-        return (longer.length - edit) / parseFloat(longer.length);
+        document.getElementById('resultados').innerHTML = html;
     }
 
     function limpiar() { if(confirm("¿Limpiar todo?")) { fotos=[]; document.getElementById('cuerpo').innerHTML=""; renderGaleria(); BASE.forEach(p=>nuevaFila(p,0)); } }
