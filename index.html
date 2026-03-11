@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Calculadora Cosecha PRO - V25 Depurada</title>
+    <title>Calculadora Cosecha PRO - V28 Final</title>
     <style>
         :root { --primary: #1a73e8; --secondary: #673ab7; --success: #34a853; --danger: #ea4335; }
         body { font-family: 'Segoe UI', sans-serif; margin: 20px; background: #f0f2f5; color: #333; }
@@ -11,23 +11,19 @@
         .config-panel { background: #fff3e0; border-color: #ffe0b2; }
         .setup-panel { background: #e8f0fe; border-left: 5px solid var(--primary); }
         .history-panel { background: #f8f9fa; border: 1px dashed #ccc; max-height: 200px; overflow-y: auto; font-size: 0.85em; }
-        
         .btn { padding: 10px 18px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; display: inline-flex; align-items: center; gap: 8px; color: white; }
         .btn-ia { background: var(--secondary); }
         .btn-add { background: var(--success); }
         .btn-clear { background: var(--danger); }
         .btn-discord { background: #5865F2; }
         .btn-save { background: #ff9800; }
-
         table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
         th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; }
         input { padding: 8px; border: 1px solid #ddd; border-radius: 6px; }
-        
         .res-box { background: #1e1e1e; color: #eee; padding: 15px; border-radius: 10px; margin-top: 10px; font-family: 'Consolas', monospace; line-height: 1.5; position: relative; }
         .res-box b { color: #fbbc05; }
         .res-box.blue { border-left: 5px solid var(--primary); background: #1a1e26; }
         .copy-btn { background: #444; border: none; padding: 5px 8px; border-radius: 4px; color: white; cursor: pointer; float: right; font-size: 10px; }
-        
         .mode-title { margin-top: 25px; font-size: 0.9em; color: #555; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; border-bottom: 2px solid #ddd; padding-bottom: 5px; }
         .n-grupo { width: 130px; margin-right: 8px; margin-bottom: 8px; border: 1px solid var(--primary); font-weight: bold; }
         #loading { display: none; font-weight: bold; color: var(--secondary); margin-left: 10px; background: #eee; padding: 5px 10px; border-radius: 5px; }
@@ -40,7 +36,7 @@
 
     <div class="config-panel panel">
         <strong>🔑 API KEY:</strong>
-        <input type="password" id="api-key" style="width: 80%;" placeholder="Pega tu clave AIza..." oninput="localStorage.setItem('key_harvest_v25', this.value)">
+        <input type="password" id="api-key" style="width: 80%;" placeholder="Pega tu clave AIza..." oninput="localStorage.setItem('key_harvest_v28', this.value)">
     </div>
 
     <div class="setup-panel panel">
@@ -66,12 +62,12 @@
         <tbody id="tabla-cuerpo"></tbody>
     </table>
 
+    <div id="res-equitativo"></div>
+    <div id="res-optimizado"></div>
+    
     <div style="margin-top: 30px; display: flex; justify-content: flex-end;">
         <button class="btn btn-discord" onclick="exportarDiscord()">📊 Copiar para Discord</button>
     </div>
-
-    <div id="res-equitativo"></div>
-    <div id="res-optimizado"></div>
 
     <h3 style="margin-top:40px; border-top: 2px solid #ddd; padding-top: 20px;">📜 Historial Reciente</h3>
     <div id="historial-lista" class="history-panel panel"></div>
@@ -79,19 +75,19 @@
 
 <script>
     const productosBase = ["Remolacha azucarera", "Café", "Piña", "Trigo", "Arándanos", "Patata", "Champiñones", "Cebada", "Maíz"];
-    let historial = JSON.parse(localStorage.getItem('hist_harvest_v25')) || [];
+    let historial = JSON.parse(localStorage.getItem('hist_harvest_v28')) || [];
 
     window.onload = () => {
-        const k = localStorage.getItem('key_harvest_v25');
+        const k = localStorage.getItem('key_harvest_v28');
         if(k) document.getElementById('api-key').value = k;
-        const d = JSON.parse(localStorage.getItem('data_harvest_v25')) || {};
+        const d = JSON.parse(localStorage.getItem('data_harvest_v28')) || {};
         document.getElementById('n-div').value = d.n || 2;
         actualizarSocios(d.nms || []);
         if(d.ps && d.ps.length > 0) d.ps.forEach(p => nuevaFila(p.n, p.q));
         else resetDefault();
         renderHistorial();
         document.getElementById('file-input').addEventListener('change', function(e) {
-            if(this.files[0]) depuracionIniciaIA(this.files[0]);
+            if(this.files[0]) iniciarIA(this.files[0]);
         });
     };
 
@@ -115,58 +111,37 @@
         productosBase.forEach(p => nuevaFila(p, 0));
     }
 
-    async function depuracionIniciaIA(file) {
+    async function iniciarIA(file) {
         const key = document.getElementById('api-key').value.trim();
         const load = document.getElementById('loading');
-        if(!key) return alert("Pega la API Key.");
+        if(!key) return alert("Falta API Key.");
         load.style.display = "inline";
 
         try {
             const modResp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
             const modData = await modResp.json();
-            
-            // PRIORIDAD PRO PRIMERO (Depurado)
-            const modelos = modData.models
-                .map(m => m.name.replace('models/', ''))
+            const modelos = modData.models.map(m => m.name.replace('models/', ''))
                 .filter(n => n.includes('pro') || n.includes('flash'))
-                .sort((a, b) => {
-                    if (a.includes('pro') && !b.includes('pro')) return -1;
-                    if (!a.includes('pro') && b.includes('pro')) return 1;
-                    return b.localeCompare(a); 
-                });
+                .sort((a,b) => a.includes('pro') ? -1 : 1);
             
-            const b64Data = await toBase64(file);
-            const b64Purificado = b64Data.split(',')[1];
-            const mimeType = file.type || "image/png"; // Depuración: Forzar mime si falla
-            
+            const b64 = (await toBase64(file)).split(',')[1];
             let exito = false;
-            let ultimoError = "";
 
             for(const m of modelos) {
                 load.innerText = `⌛ Analizando con ${m}...`;
                 try {
                     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${key}`, {
-                        method: "POST",
-                        headers: {"Content-Type":"application/json"},
-                        body: JSON.stringify({
-                            contents:[{
-                                parts:[
-                                    {text: "Extrae los productos y cantidades. Formato: PRODUCTO: CANTIDAD. No semillas."}, 
-                                    {inline_data:{mime_type: mimeType, data: b64Purificado}}
-                                ]
-                            }]
-                        })
+                        method: "POST", headers: {"Content-Type":"application/json"},
+                        body: JSON.stringify({contents:[{parts:[{text:"Detecta PRODUCTO: CANTIDAD. No semillas."}, {inline_data:{mime_type:file.type, data:b64}}]}]})
                     });
                     const json = await res.json();
                     if(json.candidates && json.candidates[0].content) {
                         procesarLimpiezaSuma(json.candidates[0].content.parts[0].text);
                         exito = true; break;
-                    } else { ultimoError = json.error ? json.error.message : "Sin respuesta válida"; }
-                } catch(err) { console.error("Fallo en modelo:", m); continue; }
+                    }
+                } catch(e) { continue; }
             }
-            if(!exito) alert("Error tras probar todos los modelos: " + ultimoError);
-        } catch(e) { alert("Error de conexión con Google API."); }
-        
+        } catch(e) { alert("Error de conexión API."); }
         load.style.display = "none";
         document.getElementById('file-input').value = "";
     }
@@ -174,27 +149,19 @@
     function procesarLimpiezaSuma(texto) {
         texto.split('\n').forEach(linea => {
             if(!linea.includes(':')) return;
-            const parts = linea.split(':');
-            const nomIA = parts[0].trim().toLowerCase();
-            
-            // LIMPIEZA DEPUREDA: x2,924 -> 2924 (Elimina x, espacios, comas y puntos)
-            let cantSucia = parts[1].trim().replace(/^[xXº\s]+/, '');
-            cantSucia = cantSucia.replace(/[,.\s]/g, ''); 
-            const numLimpio = parseInt(cantSucia) || 0;
+            const p = linea.split(':');
+            const nomIA = p[0].trim().toLowerCase();
+            const num = parseInt(p[1].replace(/^[xXº\s]+/, '').replace(/[,.\s]/g, '')) || 0;
+            if(nomIA.includes("semilla") || num <= 0) return;
 
-            if(nomIA.includes("semilla") || numLimpio <= 0) return;
-
-            let hallado = false;
+            let h = false;
             document.querySelectorAll('#tabla-cuerpo tr').forEach(tr => {
                 const inN = tr.querySelector('.in-n'), inQ = tr.querySelector('.in-q');
-                const nomTabla = inN.value.trim().toLowerCase();
-                // Coincidencia parcial depurada
-                if(nomTabla && (nomIA.includes(nomTabla) || nomTabla.includes(nomIA))) {
-                    inQ.value = (parseInt(inQ.value)||0) + numLimpio;
-                    hallado = true;
+                if(inN.value.toLowerCase().includes(nomIA) || nomIA.includes(inN.value.toLowerCase())) {
+                    inQ.value = (parseInt(inQ.value)||0) + num; h = true;
                 }
             });
-            if(!hallado) nuevaFila(parts[0].trim(), numLimpio);
+            if(!h) nuevaFila(p[0].trim(), num);
         });
         repartir();
     }
@@ -214,65 +181,71 @@
     function repartir() {
         const n = parseInt(document.getElementById('n-div').value) || 1;
         const noms = Array.from(document.querySelectorAll('#area-nombres input')).map(i => i.value || "Socio");
-        let productos = [], total = 0;
+        let prods = [];
+        let totalD = 0;
 
         document.querySelectorAll('#tabla-cuerpo tr').forEach(tr => {
             const nom = tr.querySelector('.in-n').value;
             const cant = parseInt(tr.querySelector('.in-q').value) || 0;
             tr.querySelector('.vd').innerText = (cant * 3) + "$";
-            if(cant > 0) { productos.push({nom, cant, v: cant*3}); total += cant*3; }
+            if(cant > 0) { prods.push({nom, cant, v: cant*3}); totalD += cant*3; }
         });
 
-        const objetivo = total / n;
-        
-        // REPARTO EQUITATIVO (Depurado)
+        const objetivo = totalD / n;
+
+        // --- ⚖️ REPARTO 1: EQUITATIVO (Carrusel Perfecto) ---
         let equi = Array.from({length: n}, () => ({items:[], t:0}));
-        productos.forEach(p => {
-            let base = Math.floor(p.cant / n), resto = p.cant % n;
+        let indexSobrante = 0;
+        prods.forEach(p => {
+            let base = Math.floor(p.cant / n);
+            let sobrantes = p.cant % n;
             for(let i=0; i<n; i++) {
-                let c = base + (i < resto ? 1 : 0);
-                if(c > 0) { equi[i].items.push(`${c} ${p.nom}`); equi[i].t += c * 3; }
+                if(base > 0) { equi[i].items.push(`${base} ${p.nom}`); equi[i].t += base*3; }
             }
+            for(let j=0; j<sobrantes; j++) {
+                let suertudo = (indexSobrante + j) % n;
+                equi[suertudo].items.push(`1 ${p.nom}`);
+                equi[suertudo].t += 3;
+            }
+            indexSobrante = (indexSobrante + sobrantes) % n;
         });
 
-        // REPARTO RÁPIDO (Depurado)
+        // --- ⚡ REPARTO 2: RÁPIDO (Corte Mínimo e Igualdad Máxima) ---
         let opti = Array.from({length: n}, () => ({items:[], t:0}));
-        let pCopy = JSON.parse(JSON.stringify(productos)).sort((a,b) => b.v - a.v);
-        pCopy.forEach(p => {
-            let s = opti.reduce((prev, curr) => (prev.t < curr.t) ? prev : curr);
-            if (s.t + p.v <= objetivo + 3) {
-                s.items.push(`${p.cant} ${p.nom}`); s.t += p.v;
-            } else {
+        let pRes = JSON.parse(JSON.stringify(prods)).sort((a,b) => b.v - a.v);
+
+        pRes.forEach(p => {
+            while(p.cant > 0) {
+                let s = opti.reduce((min, curr) => curr.t < min.t ? curr : min);
                 let falta = objetivo - s.t;
-                let sacos = Math.round(falta / 3);
-                if (sacos > 0 && sacos <= p.cant) {
-                    s.items.push(`${sacos} ${p.nom}`); s.t += sacos * 3;
-                    p.cant -= sacos; p.v -= (sacos * 3);
-                }
-                if (p.cant > 0) {
-                    let s2 = opti.reduce((prev, curr) => (prev.t < curr.t) ? prev : curr);
-                    s2.items.push(`${p.cant} ${p.nom}`); s2.t += p.v;
+                let sacosNecesarios = Math.round(falta / 3);
+
+                if (sacosNecesarios >= p.cant || sacosNecesarios <= 0) {
+                    s.items.push(`${p.cant} ${p.nom}`);
+                    s.t += p.cant * 3;
+                    p.cant = 0;
+                } else {
+                    s.items.push(`${sacosNecesarios} ${p.nom}`);
+                    s.t += sacosNecesarios * 3;
+                    p.cant -= sacosNecesarios;
                 }
             }
         });
 
         renderPanel(equi, 'res-equitativo', '⚖️ Opción 1: Reparto Equitativo', '', noms);
-        renderPanel(opti, 'res-optimizado', '⚡ Opción 2: Reparto Rápido (Sacos completos)', 'blue', noms);
+        renderPanel(opti, 'res-optimizado', '⚡ Opción 2: Reparto Rápido (Sacos optimizados)', 'blue', noms);
         
-        // Guardado local
         const ps = Array.from(document.querySelectorAll('#tabla-cuerpo tr')).map(tr => ({n: tr.querySelector('.in-n').value, q: tr.querySelector('.in-q').value}));
-        localStorage.setItem('data_harvest_v25', JSON.stringify({n, nms: noms, ps}));
+        localStorage.setItem('data_harvest_v28', JSON.stringify({n, nms: noms, ps}));
     }
 
     function renderPanel(data, divId, titulo, clase, noms) {
         let h = `<div class="mode-title">${titulo}</div>`;
         data.forEach((g, i) => {
-            if(g.t > 0) {
-                const txt = `${g.t}$ - Compra ${g.items.join(' + ')}`;
-                h += `<div style="margin-top:10px; font-weight:bold; font-size:0.8em;">${noms[i].toUpperCase()}:</div>
-                <div class="res-box ${clase}"><button class="copy-btn" onclick="copyToClipboard('${txt}')">Copiar</button>
-                <b>${g.t}$</b> - Compra ${g.items.join(' + ')}</div>`;
-            }
+            const txt = `${g.t}$ - Compra ${g.items.join(' + ') || 'Nada'}`;
+            h += `<div style="margin-top:10px; font-weight:bold; font-size:0.8em;">${noms[i].toUpperCase()}:</div>
+            <div class="res-box ${clase}"><button class="copy-btn" onclick="copyToClipboard('${txt}')">Copiar</button>
+            <b>${g.t}$</b> - Compra ${g.items.join(' + ') || 'Nada'}</div>`;
         });
         document.getElementById(divId).innerHTML = h;
     }
@@ -282,11 +255,10 @@
         let msg = `📦 **REPORTE DE COSECHA**\n💰 **Total:** \`${total}$\`\n\n`;
         document.querySelectorAll('#res-optimizado .res-box').forEach((box) => {
             const socio = box.previousElementSibling.innerText;
-            const contenido = box.innerText.replace('Copiar', '').trim();
-            msg += `👤 **${socio}**\n└ ${contenido}\n`;
+            msg += `👤 **${socio}**\n└ ${box.innerText.replace('Copiar', '').trim()}\n`;
         });
         copyToClipboard(msg);
-        alert("¡Reporte copiado!");
+        alert("¡Copiado para Discord!");
     }
 
     function guardarHistorial() {
@@ -294,27 +266,20 @@
         if(total === 0) return;
         historial.unshift({ f: new Date().toLocaleString(), t: total });
         if(historial.length > 10) historial.pop();
-        localStorage.setItem('hist_harvest_v25', JSON.stringify(historial));
+        localStorage.setItem('hist_harvest_v28', JSON.stringify(historial));
         renderHistorial();
-        alert("Historial actualizado.");
+        alert("Sesión archivada.");
     }
 
     function renderHistorial() {
         const hList = document.getElementById('historial-lista');
-        if(historial.length === 0) { hList.innerHTML = "<p style='padding:10px; color:#999;'>Sin sesiones guardadas.</p>"; return; }
+        if(historial.length === 0) { hList.innerHTML = "<p style='padding:10px; color:#999;'>Sin historial.</p>"; return; }
         hList.innerHTML = historial.map(i => `<div style="padding:8px; border-bottom:1px solid #eee; display:flex; justify-content:space-between;"><span>📅 ${i.f}</span><b>${i.t}$</b></div>`).join('');
     }
 
     function copyToClipboard(t) { navigator.clipboard.writeText(t); }
-    function limpiarTabla() { if(confirm("¿Seguro que quieres limpiar todo?")) { resetDefault(); repartir(); } }
-    function toBase64(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = error => reject(error);
-        });
-    }
+    function limpiarTabla() { if(confirm("¿Limpiar todo?")) { resetDefault(); repartir(); } }
+    function toBase64(f) { return new Promise((res, rej) => { const r = new FileReader(); r.readAsDataURL(f); r.onload = () => res(r.result); r.onerror = e => rej(e); }); }
 </script>
 </body>
 </html>
