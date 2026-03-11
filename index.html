@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Calculadora Cosecha PRO - V32 Inteligente</title>
+    <title>Calculadora Cosecha PRO - V33 Miniaturas</title>
     <style>
         :root { --primary: #1a73e8; --secondary: #673ab7; --success: #34a853; --danger: #ea4335; }
         body { font-family: 'Segoe UI', sans-serif; margin: 20px; background: #f0f2f5; color: #333; }
@@ -14,26 +14,30 @@
         .btn-ia { background: var(--secondary); }
         .btn-add { background: var(--success); }
         .btn-clear { background: var(--danger); }
-        .btn-discord { background: #5865F2; }
+        
+        /* Estilos de la Galería de Miniaturas */
+        #gallery { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-left: 15px; }
+        .thumb-container { position: relative; width: 50px; height: 50px; border-radius: 6px; overflow: hidden; border: 2px solid #ddd; transition: 0.2s; cursor: pointer; }
+        .thumb-container:hover { transform: scale(1.1); border-color: var(--primary); z-index: 10; }
+        .thumb-container img { width: 100%; height: 100%; object-fit: cover; }
+        .thumb-container:hover img { object-fit: contain; background: #000; width: 250px; height: 250px; position: absolute; left: 0; top: 0; }
+        
         table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
         th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; }
         input { padding: 8px; border: 1px solid #ddd; border-radius: 6px; }
         .res-box { background: #1e1e1e; color: #eee; padding: 15px; border-radius: 10px; margin-top: 10px; font-family: 'Consolas', monospace; position: relative; }
         .res-box b { color: #fbbc05; }
-        .res-box.blue { border-left: 5px solid var(--primary); background: #1a1e26; }
-        .copy-btn { background: #444; border: none; padding: 5px 8px; border-radius: 4px; color: white; cursor: pointer; float: right; font-size: 10px; }
-        .mode-title { margin-top: 25px; font-size: 0.9em; color: #555; text-transform: uppercase; font-weight: bold; border-bottom: 2px solid #ddd; }
-        #loading { display: none; font-weight: bold; color: var(--secondary); margin-left: 10px; }
+        #loading { display: none; font-weight: bold; color: var(--secondary); }
     </style>
 </head>
 <body>
 
 <div class="box">
-    <h2 style="color:var(--primary); margin-top:0;">Calculadora de Cosecha PRO 📦 V32</h2>
+    <h2 style="color:var(--primary); margin-top:0;">Calculadora de Cosecha PRO 📦 V33</h2>
 
     <div class="config-panel panel">
         <strong>🔑 API KEY:</strong>
-        <input type="password" id="api-key" style="width: 80%;" oninput="localStorage.setItem('key_harvest_v32', this.value)">
+        <input type="password" id="api-key" style="width: 80%;" oninput="localStorage.setItem('key_harvest_v33', this.value)">
     </div>
 
     <div class="setup-panel panel">
@@ -45,11 +49,14 @@
     <div style="margin: 25px 0; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
         <button class="btn btn-add" onclick="nuevaFila('', 0)">➕ Añadir Fila</button>
         <label class="btn btn-ia" style="cursor:pointer">
-            📷 SUBIR CAPTURA (Suma Acumulativa)
+            📷 SUBIR CAPTURA
             <input type="file" id="file-input" accept="image/*" style="display:none">
         </label>
+        
+        <div id="gallery"></div>
+
         <span id="loading">⌛ Procesando...</span>
-        <button class="btn btn-clear" style="margin-left:auto" onclick="limpiarTabla()">🗑️ Limpiar Todo</button>
+        <button class="btn btn-clear" style="margin-left:auto" onclick="limpiarTodo()">🗑️ Limpiar Todo</button>
     </div>
 
     <table>
@@ -58,58 +65,56 @@
     </table>
 
     <div id="res-equitativo"></div>
-    <div id="res-optimizado"></div>
-    
-    <div style="margin-top: 30px; display: flex; justify-content: flex-end;">
-        <button class="btn btn-discord" onclick="exportarDiscord()">📊 Copiar para Discord</button>
-    </div>
 </div>
 
 <script>
     const productosBase = ["Remolacha azucarera", "Café", "Piña", "Trigo", "Arándanos", "Patata", "Champiñones", "Cebada", "Maíz"];
+    let imagenesCargadas = JSON.parse(localStorage.getItem('imgs_v33')) || [];
 
     window.onload = () => {
-        const k = localStorage.getItem('key_harvest_v32');
+        const k = localStorage.getItem('key_harvest_v33');
         if(k) document.getElementById('api-key').value = k;
         actualizarSocios();
         resetDefault();
+        renderGaleria();
         document.getElementById('file-input').addEventListener('change', function(e) {
-            if(this.files[0]) iniciarIA(this.files[0]);
+            if(this.files[0]) procesarImagen(this.files[0]);
         });
     };
 
-    function actualizarSocios() {
-        const n = parseInt(document.getElementById('n-div').value) || 1;
-        const area = document.getElementById('area-nombres');
-        area.innerHTML = "";
-        for(let i=0; i<n; i++) {
-            const input = document.createElement('input');
-            input.style.width = "120px"; input.style.margin = "5px";
-            input.value = `Socio ${i+1}`;
-            input.oninput = repartir;
-            area.appendChild(input);
-        }
-        repartir();
+    function renderGaleria() {
+        const gal = document.getElementById('gallery');
+        gal.innerHTML = "";
+        imagenesCargadas.forEach(src => {
+            const div = document.createElement('div');
+            div.className = "thumb-container";
+            div.innerHTML = `<img src="${src}">`;
+            gal.appendChild(div);
+        });
     }
 
-    function resetDefault() {
-        document.getElementById('tabla-cuerpo').innerHTML = "";
-        productosBase.forEach(p => nuevaFila(p, 0));
+    async function procesarImagen(file) {
+        const b64 = await toBase64(file);
+        // Guardar en miniatura
+        imagenesCargadas.push(b64);
+        localStorage.setItem('imgs_v33', JSON.stringify(imagenesCargadas));
+        renderGaleria();
+        
+        // Iniciar IA
+        iniciarIA(b64.split(',')[1]);
     }
 
-    async function iniciarIA(file) {
+    async function iniciarIA(b64Data) {
         const key = document.getElementById('api-key').value.trim();
         const load = document.getElementById('loading');
         if(!key) return alert("Falta API Key.");
         load.style.display = "inline";
 
         try {
-            const b64 = (await toBase64(file)).split(',')[1];
-            const instruccion = "Analiza la imagen. Busca PRODUCTO y xCANTIDAD (tras la x). Ignora KG. Formato: PRODUCTO:CANTIDAD. Ejemplo: Trigo:2924. Sin notas.";
-
+            const instruccion = "Analiza la imagen. Busca PRODUCTO y xCANTIDAD (tras la x). Ignora KG. Formato: PRODUCTO:CANTIDAD. Sin notas.";
             const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
                 method: "POST", headers: {"Content-Type":"application/json"},
-                body: JSON.stringify({contents:[{parts:[{text: instruccion}, {inline_data:{mime_type:file.type, data:b64}}]}]})
+                body: JSON.stringify({contents:[{parts:[{text: instruccion}, {inline_data:{mime_type:"image/png", data:b64Data}}]}]})
             });
             const json = await res.json();
             if(json.candidates) procesarLimpiezaSuma(json.candidates[0].content.parts[0].text);
@@ -124,7 +129,7 @@
             if(!linea.includes(':')) return;
             let [nomIA, cantIA] = linea.split(':');
             const num = parseInt(cantIA.replace(/\D/g, '')) || 0;
-            if(num <= 0 || linea.toLowerCase().includes('kg')) return;
+            if(num <= 0) return;
 
             let mejorCoincidencia = null;
             let similitudMaxima = 0;
@@ -137,7 +142,7 @@
 
             if (mejorCoincidencia && similitudMaxima > 0.7) {
                 const inQ = mejorCoincidencia.querySelector('.in-q');
-                inQ.value = (parseInt(inQ.value) || 0) + num; // SUMA ACUMULATIVA
+                inQ.value = (parseInt(inQ.value) || 0) + num;
             } else {
                 nuevaFila(nomIA.trim(), num);
             }
@@ -145,6 +150,7 @@
         repartir();
     }
 
+    // Funciones de Similitud (Levenshtein)
     function calcularSimilitud(s1, s2) {
         let longer = s1.length < s2.length ? s2 : s1;
         let shorter = s1.length < s2.length ? s1 : s2;
@@ -169,11 +175,31 @@
         return costs[s2.length];
     }
 
+    function actualizarSocios() {
+        const n = parseInt(document.getElementById('n-div').value) || 1;
+        const area = document.getElementById('area-nombres');
+        const actuales = Array.from(area.querySelectorAll('input')).map(i => i.value);
+        area.innerHTML = "";
+        for(let i=0; i<n; i++) {
+            const input = document.createElement('input');
+            input.style.width = "120px"; input.style.margin = "5px";
+            input.value = actuales[i] || `Socio ${i+1}`;
+            input.oninput = repartir;
+            area.appendChild(input);
+        }
+        repartir();
+    }
+
+    function resetDefault() {
+        document.getElementById('tabla-cuerpo').innerHTML = "";
+        productosBase.forEach(p => nuevaFila(p, 0));
+    }
+
     function nuevaFila(n="", q=0) {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td><input type="text" class="in-n" value="${n}" oninput="repartir()"></td>
-            <td><input type="number" class="in-q" value="${q}" oninput="repartir()"></td>
+            <td><input type="text" class="in-n" value="${n}" oninput="repartir()" style="width:200px;"></td>
+            <td><input type="number" class="in-q" value="${q}" oninput="repartir()" style="width:80px;"></td>
             <td class="vd" style="font-weight:bold; color:var(--primary)">${q*3}$</td>
             <td><button onclick="this.parentElement.parentElement.remove(); repartir();">✕</button></td>
         `;
@@ -184,16 +210,14 @@
     function repartir() {
         const n = parseInt(document.getElementById('n-div').value) || 1;
         const noms = Array.from(document.querySelectorAll('#area-nombres input')).map(i => i.value);
-        let prods = [], totalD = 0;
-
+        let prods = [];
         document.querySelectorAll('#tabla-cuerpo tr').forEach(tr => {
             const nom = tr.querySelector('.in-n').value;
             const cant = parseInt(tr.querySelector('.in-q').value) || 0;
             tr.querySelector('.vd').innerText = (cant * 3) + "$";
-            if(cant > 0) { prods.push({nom, cant}); totalD += cant*3; }
+            if(cant > 0) prods.push({nom, cant});
         });
 
-        // REPARTO EQUITATIVO (CARRUSEL)
         let equi = Array.from({length: n}, () => ({items:[], t:0}));
         let pGlobal = 0;
         prods.forEach(p => {
@@ -206,21 +230,26 @@
             pGlobal = (pGlobal + sobras) % n;
         });
 
-        renderPanel(equi, 'res-equitativo', '⚖️ Opción 1: Reparto Equitativo', noms);
-    }
-
-    function renderPanel(data, divId, titulo, noms) {
-        let h = `<div class="mode-title">${titulo}</div>`;
-        data.forEach((g, i) => {
+        let h = `<div class="mode-title">⚖️ Reparto Equitativo</div>`;
+        equi.forEach((g, i) => {
             const txt = `${g.t}$ - Compra ${g.items.join(' + ')}`;
-            h += `<div style="margin-top:10px; font-weight:bold;">${noms[i]}:</div>
-            <div class="res-box"><button class="copy-btn" onclick="navigator.clipboard.writeText('${txt}')">Copiar</button>
-            <b>${g.t}$</b> - Compra ${g.items.join(' + ')}</div>`;
+            h += `<div style="margin-top:10px; font-weight:bold;">${noms[i].toUpperCase()}:</div>
+            <div class="res-box"><button class="copy-btn" style="float:right; background:#444; color:white; border:none; padding:4px; cursor:pointer;" onclick="navigator.clipboard.writeText('${txt}')">Copiar</button>
+            <b>${g.t}$</b> - Compra ${g.items.join(' + ') || 'Nada'}</div>`;
         });
-        document.getElementById(divId).innerHTML = h;
+        document.getElementById('res-equitativo').innerHTML = h;
     }
 
-    function limpiarTabla() { if(confirm("¿Borrar todo?")) { resetDefault(); repartir(); } }
+    function limpiarTodo() {
+        if(confirm("¿Borrar todo, incluyendo fotos?")) {
+            imagenesCargadas = [];
+            localStorage.removeItem('imgs_v33');
+            renderGaleria();
+            resetDefault();
+            repartir();
+        }
+    }
+
     function toBase64(f) { return new Promise((res) => { const r = new FileReader(); r.readAsDataURL(f); r.onload = () => res(r.result); }); }
 </script>
 </body>
