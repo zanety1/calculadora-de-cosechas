@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cosecha PRO - V1.6 Gold</title>
+    <title>Cosecha PRO - V1.7 Gold</title>
     <style>
         :root { 
             --primary: #1a73e8; --secondary: #673ab7; --success: #34a853; --danger: #ea4335; 
@@ -65,7 +65,7 @@
 
     <div class="box">
         <div class="header">
-            <h2 style="margin:0; font-weight: 800; color: var(--primary);">📦 Cosecha PRO <span style="font-size: 0.5em; vertical-align: middle; opacity: 0.6;">V1.6</span></h2>
+            <h2 style="margin:0; font-weight: 800; color: var(--primary);">📦 Cosecha PRO <span style="font-size: 0.5em; vertical-align: middle; opacity: 0.6;">V1.7</span></h2>
             <div class="theme-switch" onclick="toggleTheme()">🌓</div>
         </div>
 
@@ -141,7 +141,7 @@
         document.addEventListener('keypress', (e) => { if(e.key === 'Enter') sumarTodo(); });
     };
 
-    // --- LÓGICA IA ---
+    // --- LÓGICA IA V1.7 (Filtro Millares) ---
 
     async function obtenerModelos(apiKey) {
         try {
@@ -178,7 +178,15 @@
 
     async function llamarIA(base64, key) {
         const nombresEnTabla = Array.from(document.querySelectorAll('.p-nom')).map(i => i.value).filter(v => v !== "").join(", ");
-        const prompt = `Analiza esta cosecha: 1. Cantidad está en 'xNúmero' (ARRIBA). 2. Nombre está DEBAJO. 3. OMITE valores con 'kg'. 4. Referencia: ${nombresEnTabla}. Responde SOLO JSON: {"Producto": Cantidad}`;
+        
+        // PROMPT AJUSTADO: Se pide explícitamente tratar la coma como miles.
+        const prompt = `Analiza esta cosecha: 
+        1. Cantidad está tras la 'x' (ARRIBA). 
+        2. IMPORTANTE: Si la cantidad tiene coma (ej: 1,255), trátala como MILES (1255), NO como decimal.
+        3. Nombre está DEBAJO de la imagen. 
+        4. OMITE valores con 'kg'. 
+        5. Referencia: ${nombresEnTabla}. 
+        Responde SOLO JSON: {"Producto": "Cantidad"}`;
         
         for (const model of modelosDisponibles) {
             try {
@@ -199,13 +207,18 @@
 
     function inyectarDatosAcumulativos(data) {
         Object.entries(data).forEach(([prod, cant]) => {
-            const num = parseInt(cant) || 0;
+            // LIMPIEZA DE DATOS: Eliminamos comas o puntos que la IA mande por error
+            const cantLimpia = String(cant).replace(/[.,]/g, '');
+            const num = parseInt(cantLimpia) || 0;
+            
             if (num <= 0) return;
+
             const prodNormalizado = prod.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
             let row = Array.from(document.querySelectorAll('#cuerpo-tabla tr')).find(tr => {
                 const nombreFila = tr.querySelector('.p-nom').value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
                 return nombreFila.includes(prodNormalizado) || prodNormalizado.includes(nombreFila);
             });
+            
             if (row) {
                 const inpAdd = row.querySelector('.input-add');
                 inpAdd.value = (parseInt(inpAdd.value) || 0) + num;
@@ -318,7 +331,6 @@
 
         document.getElementById('txt-total').innerText = (totalU * mult) + "$";
         
-        // REPARTO A y B usan el nuevo multiplicador
         let repA = Array.from({length: n}, () => ({l:{}, t:0}));
         if(items.length > 0) {
             let sIdx = 0;
